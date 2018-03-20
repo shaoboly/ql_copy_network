@@ -22,6 +22,7 @@ from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import math_ops
 
+FLAGS = tf.app.flags.FLAGS
 # Note: this function is based on tf.contrib.legacy_seq2seq_attention_decoder, which is now outdated.
 # In the future, it would make more sense to write variants on the attention mechanism using the new seq2seq library for tensorflow 1.0: https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention
 def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding_mask, cell, initial_state_attention=False, pointer_gen=True, use_coverage=False, prev_coverage=None):
@@ -168,7 +169,8 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
                     p_gen = tf.sigmoid(p_gen)
                     p_gens.append(p_gen)
 
-            if True:
+            if FLAGS.use_grammer_dict:
+                print("add use_grammer_dict")
                 with tf.variable_scope('calculate_pgram'):
                     p_g = linear([context_vector, state, x], 1, True)  # a scalar
                     p_g = tf.sigmoid(p_g)
@@ -325,12 +327,14 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
 
             # Calculate p_gen
             if pointer_gen:
+                print("add calculate_pgen")
                 with tf.variable_scope('calculate_pgen'):
                     p_gen = linear([context_vector, state, x], 1, True) # a scalar
                     p_gen = tf.sigmoid(p_gen)
                     p_gens.append(p_gen)
 
-            if True:
+            if FLAGS.use_grammer_dict:
+                print("add use_grammer_dict")
                 with tf.variable_scope('calculate_pgram'):
                     p_g = linear([context_vector, state, x], 1, True)  # a scalar
                     p_g = tf.sigmoid(p_g)

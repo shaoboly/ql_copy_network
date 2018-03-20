@@ -88,7 +88,7 @@ class Vocab(object):
             idx = self._word_to_id[word]
             for i in range(len(embedding)):
                 final_embedding[idx][i] = float(embedding[i])
-            final_embedding[idx] = norm_vector(final_embedding[idx])
+            #final_embedding[idx] = norm_vector(final_embedding[idx])
         return final_embedding
 
 def norm_vector(x,std = 1e-4):

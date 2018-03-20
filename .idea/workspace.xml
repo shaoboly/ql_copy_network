@@ -15,8 +15,8 @@
       <file leaf-file-name="config.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/config.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="544">
-              <caret line="51" column="34" lean-forward="false" selection-start-line="51" selection-start-column="27" selection-end-line="51" selection-end-column="34" />
+            <state relative-caret-position="297">
+              <caret line="19" column="37" lean-forward="false" selection-start-line="19" selection-start-column="28" selection-end-line="19" selection-end-column="37" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -24,35 +24,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="tf_train.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/tf_train.py">
+      <file leaf-file-name="generate_data_set.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/generate_data_set.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="293">
-              <caret line="56" column="12" lean-forward="false" selection-start-line="56" selection-start-column="12" selection-end-line="56" selection-end-column="12" />
-              <folding>
-                <element signature="e#0#23#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="model_gru.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/model_gru.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="388">
-              <caret line="152" column="39" lean-forward="false" selection-start-line="152" selection-start-column="36" selection-end-line="152" selection-end-column="39" />
-              <folding>
-                <element signature="e#835#844#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="data.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/data.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="270">
-              <caret line="79" column="65" lean-forward="false" selection-start-line="79" selection-start-column="46" selection-end-line="79" selection-end-column="65" />
+            <state relative-caret-position="135">
+              <caret line="23" column="25" lean-forward="false" selection-start-line="23" selection-start-column="25" selection-end-line="23" selection-end-column="25" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -60,11 +36,67 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="tf_train.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/tf_train.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1312">
+              <caret line="241" column="71" lean-forward="false" selection-start-line="241" selection-start-column="62" selection-end-line="241" selection-end-column="71" />
+              <folding>
+                <element signature="e#0#23#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="model_gru.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/model_gru.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="536">
+              <caret line="595" column="48" lean-forward="true" selection-start-line="595" selection-start-column="48" selection-end-line="595" selection-end-column="48" />
+              <folding>
+                <element signature="e#835#844#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="reverse_target.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/reverse_target.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="324">
+              <caret line="12" column="81" lean-forward="false" selection-start-line="12" selection-start-column="81" selection-end-line="12" selection-end-column="81" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="data.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/data.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="785">
+              <caret line="91" column="30" lean-forward="false" selection-start-line="91" selection-start-column="30" selection-end-line="91" selection-end-column="30" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="decode.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/decode.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="392">
+              <caret line="115" column="40" lean-forward="false" selection-start-line="115" selection-start-column="40" selection-end-line="115" selection-end-column="40" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="attention_decoder.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/attention_decoder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="311">
-              <caret line="174" column="41" lean-forward="false" selection-start-line="174" selection-start-column="38" selection-end-line="174" selection-end-column="41" />
+            <state relative-caret-position="1181">
+              <caret line="172" column="45" lean-forward="false" selection-start-line="172" selection-start-column="45" selection-end-line="172" selection-end-column="45" />
               <folding>
                 <element signature="e#768#791#0" expanded="true" />
               </folding>
@@ -75,31 +107,9 @@
       <file leaf-file-name="beam_search.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/beam_search.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="612">
-              <caret line="131" column="55" lean-forward="false" selection-start-line="131" selection-start-column="55" selection-end-line="131" selection-end-column="55" />
+            <state relative-caret-position="195">
+              <caret line="117" column="99" lean-forward="false" selection-start-line="117" selection-start-column="85" selection-end-line="117" selection-end-column="99" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="decode.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/decode.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="567">
-              <caret line="31" column="0" lean-forward="false" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="26" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="batcher.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/batcher.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="799">
-              <caret line="238" column="35" lean-forward="false" selection-start-line="238" selection-start-column="28" selection-end-line="238" selection-end-column="35" />
-              <folding>
-                <element signature="e#0#13#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -115,9 +125,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>run_train_step</find>
-      <find>model</find>
-      <find>incorrectly formatted line in vocabulary file</find>
       <find>run_eval_step</find>
       <find>next_batch</find>
       <find>global</find>
@@ -131,7 +138,6 @@
       <find>run_e</find>
       <find>train</find>
       <find>add</find>
-      <find>run</find>
       <find>Ada</find>
       <find>create</find>
       <find>state.c</find>
@@ -143,9 +149,16 @@
       <find>use_glove</find>
       <find>load_specific_mode</find>
       <find>tf.nn.softmax</find>
-      <find>trunc_norm_init_std</find>
       <find>dropout</find>
+      <find>run</find>
+      <find>run_encoder</find>
+      <find>trunc_norm_init_std</find>
+      <find>decode_onestep</find>
+      <find>load glove embedding from</find>
     </findStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
@@ -163,11 +176,13 @@
         <option value="$PROJECT_DIR$/attention_decode_new.py" />
         <option value="$PROJECT_DIR$/batcher.py" />
         <option value="$PROJECT_DIR$/model.py" />
-        <option value="$PROJECT_DIR$/attention_decoder.py" />
-        <option value="$PROJECT_DIR$/tf_train.py" />
         <option value="$PROJECT_DIR$/data.py" />
+        <option value="$PROJECT_DIR$/attention_decoder.py" />
+        <option value="$PROJECT_DIR$/train_model/55188.test" />
         <option value="$PROJECT_DIR$/config.py" />
+        <option value="$PROJECT_DIR$/tf_train.py" />
         <option value="$PROJECT_DIR$/model_gru.py" />
+        <option value="$PROJECT_DIR$/reverse_target.py" />
       </list>
     </option>
   </component>
@@ -177,6 +192,7 @@
     <option name="width" value="1936" />
     <option name="height" value="1176" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
       <flattenPackages />
@@ -206,13 +222,41 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ql_copy_network" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ql_copy_network" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="train_model" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ql_copy_network" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ql_copy_network" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="model" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../ql_copy_network_debug1" />
     <property name="SearchEverywhereHistoryKey" value="&#9;FILE&#9;file://D:/code/ql_copy_network_shared/ql_copy_network/config.py" />
   </component>
   <component name="RunDashboard">
@@ -227,25 +271,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.tf_train">
-    <configuration default="false" name="data" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ql_copy_network" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/data.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="Python.reverse_target">
     <configuration default="false" name="demo_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -313,7 +339,25 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ql_copy_network" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tf_train.py" />
-      <option name="PARAMETERS" value="--data_path D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict --log_root model\ --mode train --hidden_dim 300 --emb_dim 300 --batch_size 16 --max_enc_steps 50 --max_dec_steps 40 --min_dec_steps 1 --max_run_steps 600" />
+      <option name="PARAMETERS" value="--data_path D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict --log_root model --mode decode --hidden_dim 300 --emb_dim 300 --batch_size 32 --max_enc_steps 50 --max_dec_steps 40 --max_run_steps 70000 --lr 0.15 --beam_size 1 --single_pass True" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="reverse_target" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ql_copy_network" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/reverse_target.py" />
+      <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <method />
@@ -384,19 +428,19 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.data" />
-      <item index="1" class="java.lang.String" itemvalue="Python.demo_test" />
-      <item index="2" class="java.lang.String" itemvalue="Python.generate_data_set" />
-      <item index="3" class="java.lang.String" itemvalue="Python.model_gru" />
-      <item index="4" class="java.lang.String" itemvalue="Python.tf_train" />
+      <item index="0" class="java.lang.String" itemvalue="Python.demo_test" />
+      <item index="1" class="java.lang.String" itemvalue="Python.generate_data_set" />
+      <item index="2" class="java.lang.String" itemvalue="Python.model_gru" />
+      <item index="3" class="java.lang.String" itemvalue="Python.tf_train" />
+      <item index="4" class="java.lang.String" itemvalue="Python.reverse_target" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.tf_train" />
-        <item index="1" class="java.lang.String" itemvalue="Python.model_gru" />
-        <item index="2" class="java.lang.String" itemvalue="Python.generate_data_set" />
-        <item index="3" class="java.lang.String" itemvalue="Python.demo_test" />
-        <item index="4" class="java.lang.String" itemvalue="Python.data" />
+        <item index="0" class="java.lang.String" itemvalue="Python.reverse_target" />
+        <item index="1" class="java.lang.String" itemvalue="Python.tf_train" />
+        <item index="2" class="java.lang.String" itemvalue="Python.model_gru" />
+        <item index="3" class="java.lang.String" itemvalue="Python.generate_data_set" />
+        <item index="4" class="java.lang.String" itemvalue="Python.demo_test" />
       </list>
     </recent_temporary>
   </component>
@@ -414,19 +458,19 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1176" extended-state="1" />
+    <frame x="-8" y="-8" width="1936" height="1176" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.11353944" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21428572" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29913712" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2751678" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.29846448" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.26679462" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.33557048" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33013436" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -510,19 +554,29 @@
           <option name="timeStamp" value="67" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/attention_decoder.py</url>
-          <line>315</line>
-          <option name="timeStamp" value="71" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/model_gru.py</url>
-          <line>444</line>
+          <line>446</line>
           <option name="timeStamp" value="83" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/model_gru.py</url>
-          <line>152</line>
-          <option name="timeStamp" value="87" />
+          <line>527</line>
+          <option name="timeStamp" value="89" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tf_train.py</url>
+          <line>261</line>
+          <option name="timeStamp" value="90" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/model_gru.py</url>
+          <line>107</line>
+          <option name="timeStamp" value="92" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/model_gru.py</url>
+          <line>558</line>
+          <option name="timeStamp" value="93" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -532,7 +586,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="88" />
+      <option name="time" value="94" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
@@ -612,7 +666,7 @@
         <state relative-caret-position="5184">
           <caret line="192" column="24" lean-forward="true" selection-start-line="192" selection-start-column="24" selection-end-line="192" selection-end-column="24" />
           <folding>
-            <element signature="e#0#13#0" expanded="true" />
+            <element signature="e#0#13#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -658,14 +712,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="465">
           <caret line="43" column="0" lean-forward="false" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://C:/Anaconda3/envs/tf14/Lib/site-packages/tensorflow/python/client/session.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="209">
-          <caret line="1343" column="0" lean-forward="false" selection-start-line="1343" selection-start-column="0" selection-end-line="1343" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -732,7 +778,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/model/checkpoint" />
     <entry file="file://$PROJECT_DIR$/train_model/69864.test">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="108">
@@ -748,21 +793,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/model/output.txt" />
     <entry file="file://C:/Anaconda3/envs/tf14/Lib/site-packages/tensorflow/python/ops/rnn_cell_impl.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-319">
           <caret line="378" column="19" lean-forward="false" selection-start-line="378" selection-start-column="9" selection-end-line="378" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/generate_data_set.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-86">
-          <caret line="22" column="22" lean-forward="true" selection-start-line="22" selection-start-column="22" selection-end-line="22" selection-end-column="22" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -830,14 +864,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/beam_search.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="612">
-          <caret line="131" column="55" lean-forward="false" selection-start-line="131" selection-start-column="55" selection-end-line="131" selection-end-column="55" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/model.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="594">
@@ -859,53 +885,93 @@
         <state relative-caret-position="799">
           <caret line="238" column="35" lean-forward="false" selection-start-line="238" selection-start-column="28" selection-end-line="238" selection-end-column="35" />
           <folding>
-            <element signature="e#0#13#0" expanded="true" />
+            <element signature="e#0#13#0" expanded="false" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tf_train.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="293">
-          <caret line="56" column="12" lean-forward="false" selection-start-line="56" selection-start-column="12" selection-end-line="56" selection-end-column="12" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/decode.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="567">
-          <caret line="31" column="0" lean-forward="false" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="26" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/data.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="79" column="65" lean-forward="false" selection-start-line="79" selection-start-column="46" selection-end-line="79" selection-end-column="65" />
+        <state relative-caret-position="785">
+          <caret line="91" column="30" lean-forward="false" selection-start-line="91" selection-start-column="30" selection-end-line="91" selection-end-column="30" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/generate_data_set.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="23" column="25" lean-forward="false" selection-start-line="23" selection-start-column="25" selection-end-line="23" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model/checkpoint">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Anaconda3/envs/tf14/Lib/site-packages/tensorflow/python/client/session.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="242">
+          <caret line="1103" column="0" lean-forward="false" selection-start-line="1103" selection-start-column="0" selection-end-line="1103" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model/output.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/attention_decoder.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="311">
-          <caret line="174" column="41" lean-forward="false" selection-start-line="174" selection-start-column="38" selection-end-line="174" selection-end-column="41" />
+        <state relative-caret-position="1181">
+          <caret line="172" column="45" lean-forward="false" selection-start-line="172" selection-start-column="45" selection-end-line="172" selection-end-column="45" />
           <folding>
             <element signature="e#768#791#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/train_model/55188.test">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="567">
+          <caret line="21" column="349" lean-forward="false" selection-start-line="21" selection-start-column="344" selection-end-line="21" selection-end-column="349" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/decode.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="392">
+          <caret line="115" column="40" lean-forward="false" selection-start-line="115" selection-start-column="40" selection-end-line="115" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/beam_search.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="117" column="99" lean-forward="false" selection-start-line="117" selection-start-column="85" selection-end-line="117" selection-end-column="99" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/config.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="544">
-          <caret line="51" column="34" lean-forward="false" selection-start-line="51" selection-start-column="27" selection-end-line="51" selection-end-column="34" />
+        <state relative-caret-position="297">
+          <caret line="19" column="37" lean-forward="false" selection-start-line="19" selection-start-column="28" selection-end-line="19" selection-end-column="37" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
@@ -914,10 +980,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/model_gru.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="388">
-          <caret line="152" column="39" lean-forward="false" selection-start-line="152" selection-start-column="36" selection-end-line="152" selection-end-column="39" />
+        <state relative-caret-position="536">
+          <caret line="595" column="48" lean-forward="true" selection-start-line="595" selection-start-column="48" selection-end-line="595" selection-end-column="48" />
           <folding>
             <element signature="e#835#844#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/reverse_target.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="324">
+          <caret line="12" column="81" lean-forward="false" selection-start-line="12" selection-start-column="81" selection-end-line="12" selection-end-column="81" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tf_train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1312">
+          <caret line="241" column="71" lean-forward="false" selection-start-line="241" selection-start-column="62" selection-end-line="241" selection-end-column="71" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
           </folding>
         </state>
       </provider>

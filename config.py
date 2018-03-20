@@ -17,6 +17,7 @@ tf.app.flags.DEFINE_string('data_path', '', 'Path expression to tf.Example dataf
 tf.app.flags.DEFINE_string('vocab_path', '', 'Path expression to text vocabulary file.')
 tf.app.flags.DEFINE_string('train_name', 'train.txt', 'train file.')
 tf.app.flags.DEFINE_string('dev_name', 'input.txt', 'dev file.')
+tf.app.flags.DEFINE_string('test_name', 'input.txt', 'dev file.')
 
 # Important settings
 tf.app.flags.DEFINE_string('mode', 'train', 'must be one of train/eval/decode')
@@ -25,7 +26,7 @@ tf.app.flags.DEFINE_string('cell_name', 'gru', 'must be one of lstm/gru')
 
 tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
-tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use pretrain word2vec")
+tf.app.flags.DEFINE_boolean('use_grammer_dict', False,"use pretrain word2vec")
 
 # Where to save output
 tf.app.flags.DEFINE_string('log_root', 'train_model', 'Root directory for all logging.')
@@ -69,7 +70,7 @@ tf.app.flags.DEFINE_integer('max_run_steps', 10000000,
 # Save frequency
 tf.app.flags.DEFINE_integer('save_model_step', 100, 'How often to save the model')
 tf.app.flags.DEFINE_integer('valid_step', 1000, 'How often to save the model')
-tf.app.flags.DEFINE_integer('best_k_hyp', 1, 'Best k hypotheses')
+tf.app.flags.DEFINE_integer('best_k_hyp', 5, 'Best k hypotheses')
 tf.app.flags.DEFINE_float('beta', 0, 'Weight for timestep in beamsearch score')
 
 

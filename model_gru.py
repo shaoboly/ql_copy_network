@@ -247,14 +247,16 @@ class SummarizationModel(object):
             final_dists: The final distributions. List length max_dec_steps of (batch_size, extended_vsize) arrays.
         """
         with tf.variable_scope('final_distribution'):
-            new_vocab_with_grammer = []
-            for i,dist in enumerate(vocab_dists):
-                p_gram = self.p_grammers[i]
-                weights = self.grammer_indices_mask*p_gram+self.reverse_grammer*(1-p_gram)
-                tmp = dist * weights
-                new_vocab_with_grammer.append(tmp)
+            if self._hps.use_grammer_dict:
+                new_vocab_with_grammer = []
+                for i,dist in enumerate(vocab_dists):
+                    p_gram = self.p_grammers[i]
+                    weights = self.grammer_indices_mask*p_gram+self.reverse_grammer*(1-p_gram)
+                    tmp = dist * weights
+                    new_vocab_with_grammer.append(tmp)
 
-            vocab_dists = new_vocab_with_grammer
+                vocab_dists = new_vocab_with_grammer
+
             # Multiply vocab dists by p_gen and attention dists by (1-p_gen)
             vocab_dists = [p_gen * dist for (p_gen,dist) in zip(self.p_gens, vocab_dists)]
             attn_dists = [(1-p_gen) * dist for (p_gen,dist) in zip(self.p_gens, attn_dists)]
@@ -489,7 +491,8 @@ class SummarizationModel(object):
 
         # dec_in_state is LSTMStateTuple shape ([batch_size,hidden_dim],[batch_size,hidden_dim])
         # Given that the batch is a single example repeated, dec_in_state is identical across the batch so we just take the top row.
-        dec_in_state = tf.contrib.rnn.LSTMStateTuple(dec_in_state.c[0], dec_in_state.h[0])
+        #dec_in_state = tf.contrib.rnn.LSTMStateTuple(dec_in_state.c[0], dec_in_state.h[0])
+        dec_in_state =dec_in_state[0]
         return enc_states, dec_in_state
 
 
@@ -517,11 +520,12 @@ class SummarizationModel(object):
         beam_size = len(dec_init_states)
 
         # Turn dec_init_states (a list of LSTMStateTuples) into a single LSTMStateTuple for the batch
-        cells = [np.expand_dims(state.c, axis=0) for state in dec_init_states]
+        '''cells = [np.expand_dims(state.c, axis=0) for state in dec_init_states]
         hiddens = [np.expand_dims(state.h, axis=0) for state in dec_init_states]
         new_c = np.concatenate(cells, axis=0)	# shape [batch_size,hidden_dim]
         new_h = np.concatenate(hiddens, axis=0)	# shape [batch_size,hidden_dim]
-        new_dec_in_state = tf.contrib.rnn.LSTMStateTuple(new_c, new_h)
+        new_dec_in_state = tf.contrib.rnn.LSTMStateTuple(new_c, new_h)'''
+        new_dec_in_state = dec_init_states
 
         if first:
             mask_context = np.zeros([self._hps.batch_size, self._hps.hidden_dim * 2])
@@ -555,7 +559,7 @@ class SummarizationModel(object):
         results = sess.run(to_return, feed_dict=feed) # run the decoder step
 
         # Convert results['states'] (a single LSTMStateTuple) into a list of LSTMStateTuple -- one for each hypothesis
-        new_states = [tf.contrib.rnn.LSTMStateTuple(results['states'].c[i, :], results['states'].h[i, :]) for i in range(beam_size)]
+        new_states = [results['states'][i, :] for i in range(beam_size)]
 
         # Convert singleton list containing a tensor to a list of k arrays
         assert len(results['attn_dists'])==1

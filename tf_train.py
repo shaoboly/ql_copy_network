@@ -239,7 +239,7 @@ def decode_Beam(FLAGS):
     FLAGS_decode["max_dec_steps"] = 1
     FLAGS_decode = config.generate_nametuple(FLAGS_decode)
     # The model is configured with max_dec_steps=1 because we only ever run one step of the decoder at a time (to do beam search). Note that the batcher is initialized with max_dec_steps equal to e.g. 100 because the batches need to contain the full summaries
-    batcher = Batcher(FLAGS.data_path, vocab, FLAGS_batcher,  data_file='input.txt')
+    batcher = Batcher(FLAGS.data_path, vocab, FLAGS_batcher,  data_file=FLAGS.test_name)
 
     model = SummarizationModel(FLAGS_decode, vocab,batcher)
     decoder = BeamSearchDecoder(model, batcher, vocab)
