@@ -27,14 +27,16 @@ tf.app.flags.DEFINE_string('cell_name', 'gru', 'must be one of lstm/gru')
 tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
 tf.app.flags.DEFINE_boolean('use_grammer_dict', False,"use pretrain word2vec")
+tf.app.flags.DEFINE_boolean('use_pos_tag', True,"use pretrain word2vec")
+
 
 # Where to save output
 tf.app.flags.DEFINE_string('log_root', 'train_model', 'Root directory for all logging.')
 tf.app.flags.DEFINE_string('exp_name', '', 'Name for experiment. Logs will be saved in a directory with this name, under log_root.')
 
 # Hyperparameters
-tf.app.flags.DEFINE_integer('hidden_dim', 200, 'dimension of RNN hidden states')
-tf.app.flags.DEFINE_integer('emb_dim', 200, 'dimension of word embeddings')
+tf.app.flags.DEFINE_integer('hidden_dim', 300, 'dimension of RNN hidden states')
+tf.app.flags.DEFINE_integer('emb_dim', 300, 'dimension of word embeddings')
 tf.app.flags.DEFINE_integer('batch_size', 64, 'minibatch size')
 tf.app.flags.DEFINE_integer('max_enc_steps', 30, 'max timesteps of encoder (max source text tokens)')
 tf.app.flags.DEFINE_integer('max_dec_steps', 30, 'max timesteps of decoder (max summary tokens)')
@@ -43,6 +45,7 @@ tf.app.flags.DEFINE_integer('min_dec_steps', 1, 'Minimum sequence length of gene
 tf.app.flags.DEFINE_integer('vocab_size', 50000, 'Size of vocabulary. These will be read from the vocabulary file in order. If the vocabulary file contains fewer words than this number, or if this number is set to 0, will take all words in the vocabulary file.')
 tf.app.flags.DEFINE_float('lr', 0.15, 'learning rate')
 tf.app.flags.DEFINE_float('learning_rate_decay_factor', 0.5, 'learning rate')
+tf.app.flags.DEFINE_integer('pos_tag_dim', 50, 'dimension of word embeddings')
 
 tf.app.flags.DEFINE_integer('badvalid', 10, 'badvalid.')
 

@@ -30,6 +30,8 @@ def train_with_eval(FLAGS):
     logging.info(FLAGS.vocab_path)
     vocab = Vocab(vocab_path, FLAGS.vocab_size)  # create a vocabulary
 
+    vocab.load_Pos_dict(os.path.join(FLAGS.data_path, "pos_tag"))
+
     logging.info("creating model...")
 
 
@@ -119,8 +121,7 @@ def validation_acc(dev_model,FLAGS):
             if np.isnan(loss):
                 logging.debug("Nan")
 
-            p_grammers = results["p_gens"]
-            p_grammers = np.array(p_grammers).T
+
             for i,instance in enumerate(ids):
                 if i==len(valid_batch.art_oovs):
                     break
@@ -139,13 +140,7 @@ def validation_acc(dev_model,FLAGS):
                 refer = valid_batch.original_abstracts[i].strip()
                 list_of_reference.append([refer])
 
-                grammer_now = p_grammers[1][i].tolist()
-
-                for j,_ in enumerate(grammer_now):
-                    grammer_now[j] = str(grammer_now[j])
-                grammer_now = " ".join(grammer_now)
-
-                out_f.write(valid_batch.original_articles[i]+ '\t' + valid_batch.original_abstracts[i]+'\t'+output_now+'\t'+grammer_now+'\n')
+                out_f.write(valid_batch.original_articles[i]+ '\t' + valid_batch.original_abstracts[i]+'\t'+output_now+'\n')
 
             totalLoss += loss
             numBatches += 1
@@ -201,6 +196,7 @@ def train_one_epoch(train_model, dev_model, vocab, FLAGS):
 def create_training_model(FLAGS,vocab):
     batcher_train = Batcher(FLAGS.data_path, vocab, FLAGS, data_file=FLAGS.train_name)
 
+    batch = batcher_train.next_batch()
 
     train_model = SummarizationModel(FLAGS, vocab,batcher_train)
 

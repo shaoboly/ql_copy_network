@@ -91,6 +91,20 @@ class Vocab(object):
             #final_embedding[idx] = norm_vector(final_embedding[idx])
         return final_embedding
 
+    def load_Pos_dict(self,pos_dir):
+        in_f = open(pos_dir, encoding="utf-8")
+        self.tag2id ={}
+        self.id2tag ={}
+        for line in in_f:
+            line = line.strip()
+            idx = len(self.id2tag)
+            self.tag2id[line] = idx
+            self.id2tag[idx] = line
+        self.pos_len = len(self.tag2id)
+        self.pos_pad_id = self.tag2id["O"]
+
+
+
 def norm_vector(x,std = 1e-4):
     x = (x - np.average(x)) / np.std(x) *std
     return x

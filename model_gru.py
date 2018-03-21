@@ -122,9 +122,11 @@ class SummarizationModel(object):
         feed_dict[self._enc_batch] = batch.enc_batch
         feed_dict[self._enc_lens] = batch.enc_lens
         feed_dict[self._enc_padding_mask] = batch.enc_padding_mask
-        if FLAGS.pointer_gen:
+        if self._hps.pointer_gen:
             feed_dict[self._enc_batch_extend_vocab] = batch.enc_batch_extend_vocab
             feed_dict[self._max_art_oovs] = batch.max_art_oovs
+        if self._hps.use_pos_tag:
+            feed_dict[self._enc_pos] = batch.enc_pos
         if not just_enc:
             feed_dict[self._dec_batch] = batch.dec_batch
             feed_dict[self._target_batch] = batch.target_batch
@@ -266,9 +268,8 @@ class SummarizationModel(object):
 
             # Multiply vocab dists by p_gen and attention dists by (1-p_gen)
             else:
-                pass
-                #vocab_dists = [p_gen * dist for (p_gen,dist) in zip(self.p_gens, vocab_dists)]
-                #attn_dists = [p_gen[2] * dist for (p_gen,dist) in zip(self.p_gens, attn_dists)]
+                vocab_dists = [p_gen * dist for (p_gen, dist) in zip(self.p_gens, vocab_dists)]
+                attn_dists = [(1 - p_gen) * dist for (p_gen, dist) in zip(self.p_gens, attn_dists)]
 
             # Concatenate some zeros to each vocabulary dist, to hold the probabilities for in-article OOV words
             extended_vsize = self._vocab.size() + self._max_art_oovs # the maximum (over the batch) size of the extended vocabulary
@@ -311,6 +312,12 @@ class SummarizationModel(object):
                 #if hps.mode=="train": self._add_emb_vis(embedding) # add to tensorboard
                 emb_enc_inputs = tf.nn.embedding_lookup(embedding, self._enc_batch) # tensor with shape (batch_size, max_enc_steps, emb_size)
                 emb_dec_inputs = [tf.nn.embedding_lookup(embedding, x) for x in tf.unstack(self._dec_batch, axis=1)] # list length max_dec_steps containing shape (batch_size, emb_size)
+                if hps.use_pos_tag:
+                    self._enc_pos = tf.placeholder(tf.int32, [hps.batch_size, None], name='enc_pos')
+                    pos_embedding = tf.get_variable('pos_tag', [self._vocab.pos_len, hps.pos_tag_dim], dtype=tf.float32, initializer=self.trunc_norm_init)
+                    enc_pos_embedding = tf.nn.embedding_lookup(pos_embedding, self._enc_pos)
+                    emb_enc_inputs = tf.concat(axis=-1, values=[emb_enc_inputs, enc_pos_embedding])
+
 
             self.embedding = embedding
 
@@ -367,7 +374,7 @@ class SummarizationModel(object):
                             indices = tf.stack( (batch_nums, targets), axis=1) # shape (batch_size, 2)
                             gold_probs = tf.gather_nd(dist, indices) # shape (batch_size). prob of correct words on this step
 
-                            tf.clip_by_value(gold_probs,1e-20,10.0)
+                            gold_probs = tf.clip_by_value(gold_probs,1e-20,10.0)
                             losses = -tf.log(gold_probs)
                             loss_per_step.append(losses)
 
@@ -477,7 +484,6 @@ class SummarizationModel(object):
                 'loss': self._loss,
                 'global_step': self.global_step,
                 'final_ids': self.final_ids,
-                'p_gens':self.p_gens,
         }
         if self._hps.coverage:
             to_return['coverage_loss'] = self._coverage_loss
