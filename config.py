@@ -26,7 +26,7 @@ tf.app.flags.DEFINE_string('cell_name', 'gru', 'must be one of lstm/gru')
 
 tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
-tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use pretrain word2vec")
+tf.app.flags.DEFINE_boolean('use_grammer_dict', False,"use pretrain word2vec")
 
 # Where to save output
 tf.app.flags.DEFINE_string('log_root', 'train_model', 'Root directory for all logging.')
