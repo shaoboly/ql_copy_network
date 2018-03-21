@@ -165,16 +165,15 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
             # Calculate p_gen
             if pointer_gen:
                 with tf.variable_scope('calculate_pgen'):
-                    p_gen = linear([context_vector,state, x], 1, True) # a scalar
-                    p_gen = tf.sigmoid(p_gen)
+                    p_gen = linear([context_vector,state, x], 3, True) # a scalar
+                    p_gen = tf.nn.softmax(p_gen)
                     p_gens.append(p_gen)
 
-            if FLAGS.use_grammer_dict:
-                print("add use_grammer_dict")
+            '''if FLAGS.use_grammer_dict:
                 with tf.variable_scope('calculate_pgram'):
                     p_g = linear([context_vector, state, x], 1, True)  # a scalar
                     p_g = tf.sigmoid(p_g)
-                    p_grammers.append(p_g)
+                    p_grammers.append(p_g)'''
 
             # Concatenate the cell_output (= decoder state) and the context vector, and pass them through a linear layer
             # This is V[s_t, h*_t] + b in the paper
@@ -327,14 +326,12 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
 
             # Calculate p_gen
             if pointer_gen:
-                print("add calculate_pgen")
                 with tf.variable_scope('calculate_pgen'):
                     p_gen = linear([context_vector, state, x], 1, True) # a scalar
                     p_gen = tf.sigmoid(p_gen)
                     p_gens.append(p_gen)
 
             if FLAGS.use_grammer_dict:
-                print("add use_grammer_dict")
                 with tf.variable_scope('calculate_pgram'):
                     p_g = linear([context_vector, state, x], 1, True)  # a scalar
                     p_g = tf.sigmoid(p_g)

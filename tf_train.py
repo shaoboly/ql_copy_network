@@ -119,7 +119,8 @@ def validation_acc(dev_model,FLAGS):
             if np.isnan(loss):
                 logging.debug("Nan")
 
-
+            p_grammers = results["p_gens"]
+            p_grammers = np.array(p_grammers).T
             for i,instance in enumerate(ids):
                 if i==len(valid_batch.art_oovs):
                     break
@@ -138,7 +139,13 @@ def validation_acc(dev_model,FLAGS):
                 refer = valid_batch.original_abstracts[i].strip()
                 list_of_reference.append([refer])
 
-                out_f.write(valid_batch.original_articles[i]+ '\t' + valid_batch.original_abstracts[i]+'\t'+output_now+'\n')
+                grammer_now = p_grammers[1][i].tolist()
+
+                for j,_ in enumerate(grammer_now):
+                    grammer_now[j] = str(grammer_now[j])
+                grammer_now = " ".join(grammer_now)
+
+                out_f.write(valid_batch.original_articles[i]+ '\t' + valid_batch.original_abstracts[i]+'\t'+output_now+'\t'+grammer_now+'\n')
 
             totalLoss += loss
             numBatches += 1

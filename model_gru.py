@@ -249,17 +249,26 @@ class SummarizationModel(object):
         with tf.variable_scope('final_distribution'):
             if self._hps.use_grammer_dict:
                 new_vocab_with_grammer = []
+                new_attention_dist = []
                 for i,dist in enumerate(vocab_dists):
-                    p_gram = self.p_grammers[i]
-                    weights = self.grammer_indices_mask*p_gram+self.reverse_grammer*(1-p_gram)
+                    p_gram = self.p_gens[i]
+                    p_first = tf.slice(p_gram,[0,0],[32,1])
+                    p_second = tf.slice(p_gram, [0, 1], [32, 1])
+                    p_third = tf.slice(p_gram, [0, 2], [32, 1])
+
+                    weights = self.grammer_indices_mask*p_first+self.reverse_grammer*p_second
                     tmp = dist * weights
                     new_vocab_with_grammer.append(tmp)
-
+                    tmp2 = attn_dists[i]*p_third
+                    new_attention_dist.append(tmp2)
                 vocab_dists = new_vocab_with_grammer
+                attn_dists = new_attention_dist
 
             # Multiply vocab dists by p_gen and attention dists by (1-p_gen)
-            vocab_dists = [p_gen * dist for (p_gen,dist) in zip(self.p_gens, vocab_dists)]
-            attn_dists = [(1-p_gen) * dist for (p_gen,dist) in zip(self.p_gens, attn_dists)]
+            else:
+                pass
+                #vocab_dists = [p_gen * dist for (p_gen,dist) in zip(self.p_gens, vocab_dists)]
+                #attn_dists = [p_gen[2] * dist for (p_gen,dist) in zip(self.p_gens, attn_dists)]
 
             # Concatenate some zeros to each vocabulary dist, to hold the probabilities for in-article OOV words
             extended_vsize = self._vocab.size() + self._max_art_oovs # the maximum (over the batch) size of the extended vocabulary
@@ -439,13 +448,11 @@ class SummarizationModel(object):
         logging.info("load glove embedding from {}".format(self._hps.glove_dir))
         with self.graph.as_default():
             embedding = self._vocab.load_word_embedding(self._hps.glove_dir,self._hps.emb_dim)
-            tmp = self.get_specific_variable(self.embedding)
 
             self.gSess_train.run(self.embedding.assign(embedding))
 
-            tmp1 = self.get_specific_variable(self.embedding)
-            print(tmp1[0])
-            print(tmp[0])
+
+
 
 
     def run_train_step(self, batch):
@@ -461,7 +468,7 @@ class SummarizationModel(object):
             to_return['coverage_loss'] = self._coverage_loss
         return self.gSess_train.run(to_return, feed_dict)
 
-    def run_eval_step(self,  batch):
+    def run_eval_step(self, batch):
         """Runs one evaluation iteration. Returns a dictionary containing summaries, loss, global_step and (optionally) coverage loss."""
         sess = self.gSess_train
         feed_dict = self._make_feed_dict(batch)
@@ -470,6 +477,7 @@ class SummarizationModel(object):
                 'loss': self._loss,
                 'global_step': self.global_step,
                 'final_ids': self.final_ids,
+                'p_gens':self.p_gens,
         }
         if self._hps.coverage:
             to_return['coverage_loss'] = self._coverage_loss
