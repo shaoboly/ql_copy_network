@@ -1,11 +1,11 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\link_entity"
+datadir= r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\pos_replace"
 
-train_f = open(datadir+r"\train.txt.link",encoding="utf-8").readlines()
-valid_f = open(datadir+r"\train.txt.link",encoding="utf-8").readlines()
-test_f = open(datadir+r"\train.txt.link",encoding="utf-8").readlines()
+train_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
+valid_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
+test_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
 
 train_out_f = open("train.txt","w",encoding="utf-8")
 valid_out_f = open("validation.txt","w",encoding="utf-8")
