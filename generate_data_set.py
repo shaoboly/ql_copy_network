@@ -1,7 +1,7 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\pos_replace"
+datadir= r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\refresh\fresh_tag"
 
 train_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
 valid_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
@@ -38,6 +38,55 @@ def generate_vocab(train_f,word_size):
                 vocab.write("{} {}\n".format(w[0], w[1]))
     vocab.close()
 
+import re
+def generate_target_vocab(train_f,word_size):
+    counter = collections.Counter()
+    predict = {}
+    for line in train_f:
+        line = str(line).strip().lower().split('\t')
+        line = line[1].split()
+
+        for w in line:
+            w = w.strip()
+            counter[w] += 1
+
+            if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
+                predict[w] = 1
+
+    counter = counter.most_common(word_size)
+
+    vocab = open("vocab.out", "w", encoding="utf-8")
+
+    for i, w in enumerate(counter):
+        if w[0] in predict:
+            vocab.write("{} {}\n".format(w[0], w[1]))
+        else:
+            if w[1] >= 10:
+                vocab.write("{} {}\n".format(w[0], w[1]))
+    vocab.close()
+
+def generate_source_vocab(train_f,word_size):
+    counter = collections.Counter()
+    predict = {}
+    for line in train_f:
+        line = str(line).strip().lower().split('\t')
+        line = line[0].split()
+
+        for w in line:
+            w = w.strip()
+            counter[w] += 1
+
+
+    counter = counter.most_common(word_size)
+
+    vocab = open("vocab.in", "w", encoding="utf-8")
+
+    for i, w in enumerate(counter):
+        if w[1] >= 4:
+            vocab.write("{} {}\n".format(w[0], w[1]))
+    vocab.close()
+
+
 def generate_training_file(train_f,train_out_f):
     random.shuffle(train_f)
 
@@ -46,8 +95,9 @@ def generate_training_file(train_f,train_out_f):
 
         train_out_f.write("{}\t{}\n".format(line[0],line[1]))
 
-generate_vocab(train_f,50000)
-
+#generate_vocab(train_f,50000)
+generate_target_vocab(train_f,10000)
+generate_source_vocab(train_f,10000)
 #generate_training_file(train_f,train_out_f)
 #generate_training_file(valid_f,valid_out_f)
 #generate_training_file(test_f,test_out_f)

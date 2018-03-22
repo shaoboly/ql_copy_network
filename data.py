@@ -1,5 +1,5 @@
 import numpy as np
-import tensorflow as tf
+import logging,os
 # <s> and </s> are used in the data files to segment the abstracts into sentences. They don't receive vocab ids.
 SENTENCE_START = '<s>'
 SENTENCE_END = '</s>'
@@ -103,6 +103,17 @@ class Vocab(object):
         self.pos_len = len(self.tag2id)
         self.pos_pad_id = self.tag2id["O"]
 
+def load_dict_data(FLAGS):
+
+    logging.info(FLAGS.vocab_path)
+    vocab_in = Vocab(os.path.join(FLAGS.data_path, "vocab.in"), FLAGS.vocab_size)  # create a vocabulary
+    if FLAGS.use_pos_tag:
+        vocab_in.load_Pos_dict(os.path.join(FLAGS.data_path, "pos_tag"))
+    if FLAGS.shared_vocab:
+        vocab_out = vocab_in
+    else:
+        vocab_out = Vocab(os.path.join(FLAGS.data_path, "vocab.out"), FLAGS.vocab_size)
+    return vocab_in,vocab_out
 
 
 def norm_vector(x,std = 1e-4):

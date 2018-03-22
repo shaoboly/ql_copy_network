@@ -26,16 +26,14 @@ def train_with_eval(FLAGS):
     logging.info("max_dec_steps:" + str(FLAGS.max_dec_steps))
     logging.info("learning rate:" + str(FLAGS.lr))
 
-    vocab_path = os.path.join(FLAGS.data_path, "vocab")
-    logging.info(FLAGS.vocab_path)
-    vocab = Vocab(vocab_path, FLAGS.vocab_size)  # create a vocabulary
+    # load dictionary
+    vocab_in, vocab_out = data.load_dict_data(FLAGS)
 
-    vocab.load_Pos_dict(os.path.join(FLAGS.data_path, "pos_tag"))
 
     logging.info("creating model...")
 
 
-    train_model, dev_model = create_training_model(FLAGS, vocab)
+    train_model, dev_model = create_training_model(FLAGS, vocab_in,vocab_out)
 
     best_bleu, best_acc, dev_loss = validation_acc(dev_model, FLAGS)
     logging.info("bleu_now {}".format(best_bleu))
@@ -53,7 +51,7 @@ def train_with_eval(FLAGS):
         if step > FLAGS.max_run_steps:
             break
 
-        loss = train_one_epoch(train_model, dev_model, vocab, FLAGS)
+        loss = train_one_epoch(train_model, dev_model, FLAGS)
         if np.isnan(loss):
             logging.info("loss is nan, restore")
             train_model.load_specific_model(bestDevModel)
@@ -125,13 +123,13 @@ def validation_acc(dev_model,FLAGS):
             for i,instance in enumerate(ids):
                 if i==len(valid_batch.art_oovs):
                     break
-                out_words = data.outputids2words(instance,dev_model._vocab,valid_batch.art_oovs[i])
-                refer = data.outputids2words(valid_batch.target_batch[i],dev_model._vocab,valid_batch.art_oovs[i])
+                out_words = data.outputids2words(instance, dev_model._vocab_out, valid_batch.art_oovs[i])
+                #refer = data.outputids2words(valid_batch.target_batch[i],dev_model._vocab,valid_batch.art_oovs[i])
 
                 if data.STOP_DECODING in out_words:
                     out_words = out_words[:out_words.index(data.STOP_DECODING)]
-                if data.STOP_DECODING in refer:
-                    refer = refer[:refer.index(data.STOP_DECODING)]
+                #if data.STOP_DECODING in refer:
+                #    refer = refer[:refer.index(data.STOP_DECODING)]
 
                 output_now = " ".join(out_words)
                 output_result.append(output_now)
@@ -163,7 +161,7 @@ def validation_acc(dev_model,FLAGS):
     return bleu,acc,dev_loss
 
 
-def train_one_epoch(train_model, dev_model, vocab, FLAGS):
+def train_one_epoch(train_model, dev_model, FLAGS):
     train_model.graph.as_default()
     loss =0
     lr = train_model.get_specific_variable(train_model.learning_rate)
@@ -193,12 +191,10 @@ def train_one_epoch(train_model, dev_model, vocab, FLAGS):
 
 
 
-def create_training_model(FLAGS,vocab):
-    batcher_train = Batcher(FLAGS.data_path, vocab, FLAGS, data_file=FLAGS.train_name)
+def create_training_model(FLAGS,vocab_in, vocab_out = None):
+    batcher_train = Batcher(FLAGS.data_path, vocab_in,vocab_out, FLAGS, data_file=FLAGS.train_name)
 
-    batch = batcher_train.next_batch()
-
-    train_model = SummarizationModel(FLAGS, vocab,batcher_train)
+    train_model = SummarizationModel(FLAGS, vocab_in,vocab_out,batcher_train)
 
     logging.info("Building graph...")
     train_model.build_graph()
@@ -213,8 +209,8 @@ def create_training_model(FLAGS,vocab):
 
     #variable_scope.get_variable_scope().reuse_variables()
 
-    batcher_dev = Batcher(FLAGS.data_path, vocab, FLAGS, data_file=FLAGS.dev_name)
-    dev_model = SummarizationModel(FLAGS_eval, vocab,batcher_dev)
+    batcher_dev = Batcher(FLAGS.data_path, vocab_in,vocab_out, FLAGS, data_file=FLAGS.dev_name)
+    dev_model = SummarizationModel(FLAGS_eval, vocab_in,vocab_out,batcher_dev)
     dev_model.build_graph()
 
     train_model.create_or_load_recent_model()
@@ -232,9 +228,8 @@ def decode_Beam(FLAGS):
     # If single_pass=True, check we're in decode mode
     if FLAGS.single_pass and FLAGS.mode != 'decode':
         raise Exception("The single_pass flag should only be True in decode mode")
-    vocab_path = os.path.join(FLAGS.data_path, "vocab")
-    logging.info(FLAGS.vocab_path)
-    vocab = Vocab(vocab_path, FLAGS.vocab_size)  # create a vocabulary
+
+    vocab_in, vocab_out = data.load_dict_data(FLAGS)
 
     FLAGS_batcher = config.retype_FLAGS()
 
@@ -242,10 +237,10 @@ def decode_Beam(FLAGS):
     FLAGS_decode["max_dec_steps"] = 1
     FLAGS_decode = config.generate_nametuple(FLAGS_decode)
     # The model is configured with max_dec_steps=1 because we only ever run one step of the decoder at a time (to do beam search). Note that the batcher is initialized with max_dec_steps equal to e.g. 100 because the batches need to contain the full summaries
-    batcher = Batcher(FLAGS.data_path, vocab, FLAGS_batcher,  data_file=FLAGS.test_name)
+    batcher = Batcher(FLAGS.data_path, vocab_in,vocab_out, FLAGS_batcher,  data_file=FLAGS.test_name)
 
-    model = SummarizationModel(FLAGS_decode, vocab,batcher)
-    decoder = BeamSearchDecoder(model, batcher, vocab)
+    model = SummarizationModel(FLAGS_decode, vocab_in,vocab_out,batcher)
+    decoder = BeamSearchDecoder(model, batcher, vocab_out)
     decoder.decode()
 
 

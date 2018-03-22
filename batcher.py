@@ -4,32 +4,33 @@ import numpy as np
 import os
 #one record in dataset
 class Example:
-    def __init__(self, article, abstract_sentences,pos, vocab, config):
+    def __init__(self, article, abstract_sentences,pos,  vocab_in,vocab_out, config):
         self._config = config
 
         # Get ids of special tokens
-        start_decoding = vocab.word2id(data.START_DECODING)
-        stop_decoding = vocab.word2id(data.STOP_DECODING)
+        start_decoding = vocab_in.word2id(data.START_DECODING)
+        stop_decoding = vocab_in.word2id(data.STOP_DECODING)
 
         # Process the article
         article_words = article.split()
         if len(article_words) > config.max_enc_steps:
             article_words = article_words[:config.max_enc_steps]
         self.enc_len = len(article_words)  # store the length after truncation but before padding
-        self.enc_input = [vocab.word2id(w) for w in
+        self.enc_input = [vocab_in.word2id(w) for w in
                           article_words]  # list of word ids; OOVs are represented by the id for UNK token
 
-        pos_words = pos.split()
-        if len(pos_words) > config.max_enc_steps:
-            pos_words = pos_words[:config.max_enc_steps]
-        assert len(pos_words)==len(article_words)
 
-        self.enc_pos = [vocab.tag2id[w] for w in pos_words]
+        if config.use_pos_tag:
+            pos_words = pos.split()
+            if len(pos_words) > config.max_enc_steps:
+                pos_words = pos_words[:config.max_enc_steps]
+            assert len(pos_words)==len(article_words)
+            self.enc_pos = [vocab_out.tag2id[w] for w in pos_words]
 
         # Process the abstract
         abstract = ' '.join(abstract_sentences)  # string
         abstract_words = abstract.split()  # list of strings
-        abs_ids = [vocab.word2id(w) for w in abstract_words]  # list of word ids; OOVs are represented by the id for UNK token
+        abs_ids = [vocab_out.word2id(w) for w in abstract_words]  # list of word ids; OOVs are represented by the id for UNK token
 
 
         # Get the decoder input sequence and target sequence
@@ -39,10 +40,10 @@ class Example:
         # If using pointer-generator mode, we need to store some extra info
         if config.pointer_gen:
             # Store a version of the enc_input where in-article OOVs are represented by their temporary OOV id; also store the in-article OOVs words themselves
-            self.enc_input_extend_vocab, self.article_oovs = data.article2ids(article_words, vocab)
+            self.enc_input_extend_vocab, self.article_oovs = data.article2ids(article_words, vocab_out)
 
             # Get a verison of the reference summary where in-article OOVs are represented by their temporary article OOV id
-            abs_ids_extend_vocab = data.abstract2ids(abstract_words, vocab, self.article_oovs)
+            abs_ids_extend_vocab = data.abstract2ids(abstract_words, vocab_out, self.article_oovs)
 
             # Overwrite decoder target sequence so it uses the temp article OOV ids
             _, self.target = self.get_dec_inp_targ_seqs(abs_ids_extend_vocab, config.max_dec_steps, start_decoding,stop_decoding)
@@ -99,7 +100,7 @@ class Example:
 class Batch(object):
     """Class representing a minibatch of train/val/test examples for text summarization."""
 
-    def __init__(self, example_list, hps, vocab):
+    def __init__(self, example_list, hps, vocab,vocab_out):
         """Turns the example_list into a Batch object.
 
         Args:
@@ -136,12 +137,14 @@ class Batch(object):
         # Pad the encoder input sequences up to the length of the longest sequence
         for ex in example_list:
             ex.pad_encoder_input(max_enc_seq_len, self.pad_id)
-            ex.pad_pos_input(max_enc_seq_len,self.vocab.pos_pad_id)
+            if hps.use_pos_tag:
+                ex.pad_pos_input(max_enc_seq_len,self.vocab.pos_pad_id)
 
         # Initialize the numpy arrays
         # Note: our enc_batch can have different length (second dimension) for each batch because we use dynamic_rnn for the encoder.
         self.enc_batch = np.zeros((hps.batch_size, max_enc_seq_len), dtype=np.int32)
-        self.enc_pos = np.zeros((hps.batch_size, max_enc_seq_len), dtype=np.int32)
+        if hps.use_pos_tag:
+            self.enc_pos = np.zeros((hps.batch_size, max_enc_seq_len), dtype=np.int32)
         self.enc_lens = np.zeros((hps.batch_size), dtype=np.int32)
         self.enc_padding_mask = np.zeros((hps.batch_size, max_enc_seq_len), dtype=np.float32)
 
@@ -200,10 +203,11 @@ class Batch(object):
 
 
 class Batcher:
-    def __init__(self,data_path, vocab, config, data_file,shuffle=False):
+    def __init__(self,data_path, vocab_in,vocab_out, config, data_file,shuffle=False):
         self._data_path = data_path
         self._data_file = os.path.join(data_path,data_file)
-        self._vocab = vocab
+        self._vocab_in = vocab_in
+        self._vocab_out = vocab_out
         self._config = config
         self._shuffle = shuffle
 
@@ -228,12 +232,16 @@ class Batcher:
 
         example_list = []
         for i,instance in enumerate(batch_now):
-            article,abstract,pos = instance.strip().split("\t")
+            pos=None
+            article,abstract = instance.strip().split("\t")[:2]
+            if self._config.use_pos_tag:
+                pos = instance.strip().split("\t")[2]
+
             abstract=abstract.replace(data.SENTENCE_START,"").replace(data.SENTENCE_END,"")
-            example = Example(article, [abstract],pos, self._vocab, self._config)
+            example = Example(article, [abstract],pos, self._vocab_in,self._vocab_out, self._config)
             example_list.append(example)
 
-        batch = Batch(example_list,self._config,self._vocab)
+        batch = Batch(example_list,self._config,self._vocab_in,self._vocab_out)
         return batch
 
     def next_single_decode_batch(self):

@@ -24,10 +24,12 @@ tf.app.flags.DEFINE_string('mode', 'train', 'must be one of train/eval/decode')
 tf.app.flags.DEFINE_boolean('single_pass', False, 'For decode mode only. If True, run eval on the full dataset using a fixed checkpoint, i.e. take the current checkpoint, and use it to produce one summary for each example in the dataset, write the summaries to file and then get ROUGE scores for the whole dataset. If False (default), run concurrent decoding, i.e. repeatedly load latest checkpoint, use it to produce summaries for randomly-chosen examples and log the results to screen, indefinitely.')
 tf.app.flags.DEFINE_string('cell_name', 'gru', 'must be one of lstm/gru')
 
+tf.app.flags.DEFINE_boolean('shared_vocab', False, "if True, vocab.out = vocab.in")
 tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
 tf.app.flags.DEFINE_boolean('use_grammer_dict', False,"use pretrain word2vec")
-tf.app.flags.DEFINE_boolean('use_pos_tag', True,"use pretrain word2vec")
+tf.app.flags.DEFINE_boolean('use_pos_tag', False,"use pretrain word2vec")
+
 
 
 # Where to save output

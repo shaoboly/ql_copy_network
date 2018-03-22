@@ -76,12 +76,14 @@ def linear(args, output_size, bias, bias_start=0.0, scope=None):
 class SummarizationModel(object):
     """A class to represent a sequence-to-sequence model for text summarization. Supports both baseline mode, pointer-generator mode, and coverage"""
 
-    def __init__(self, hps, vocab,batcher):
+    def __init__(self, hps, vocab_in,vocab_out,batcher):
         self._hps = hps
-        self._vocab = vocab
+        self._vocab_in = vocab_in
+        self._vocab_out = vocab_out
         self.batcher = batcher
         if self._hps.use_grammer_dict:
-            self.grammer_index = self._vocab.load_special_vocab_indexes(os.path.join(self._hps.data_path, "grammer"))
+            self.grammer_index = self._vocab_in.load_special_vocab_indexes(os.path.join(self._hps.data_path, "grammer"))
+        self.feed_dict = None
 
 
     def _add_placeholders(self):
@@ -272,7 +274,7 @@ class SummarizationModel(object):
                 attn_dists = [(1 - p_gen) * dist for (p_gen, dist) in zip(self.p_gens, attn_dists)]
 
             # Concatenate some zeros to each vocabulary dist, to hold the probabilities for in-article OOV words
-            extended_vsize = self._vocab.size() + self._max_art_oovs # the maximum (over the batch) size of the extended vocabulary
+            extended_vsize = self._vocab_out.size() + self._max_art_oovs # the maximum (over the batch) size of the extended vocabulary
             extra_zeros = tf.zeros((self._hps.batch_size, self._max_art_oovs))
             vocab_dists_extended = [tf.concat(axis=1, values=[dist, extra_zeros]) for dist in vocab_dists] # list length max_dec_steps of shape (batch_size, extended_vsize)
 
@@ -299,7 +301,8 @@ class SummarizationModel(object):
     def _add_seq2seq(self):
         """Add the whole sequence-to-sequence model to the graph."""
         hps = self._hps
-        vsize = self._vocab.size() # size of the vocabulary
+        vsize_en = self._vocab_in.size()  # size of the vocabulary
+        vsize_out = self._vocab_out.size()
 
         with tf.variable_scope('seq2seq'):
             # Some initializers
@@ -308,18 +311,25 @@ class SummarizationModel(object):
 
             # Add embedding matrix (shared by the encoder and decoder inputs)
             with tf.variable_scope('embedding'):
-                embedding = tf.get_variable('embedding', [vsize, hps.emb_dim], dtype=tf.float32, initializer=self.trunc_norm_init)
+                embedding_in = tf.get_variable('embedding_in', [vsize_en, hps.emb_dim], dtype=tf.float32,initializer=self.trunc_norm_init)
+                if self._hps.shared_vocab:
+                    embedding_out = embedding_in
+                else:
+                    embedding_out = tf.get_variable('embedding_out', [vsize_out, hps.emb_dim], dtype=tf.float32,
+                                                    initializer=self.trunc_norm_init)
+
                 #if hps.mode=="train": self._add_emb_vis(embedding) # add to tensorboard
-                emb_enc_inputs = tf.nn.embedding_lookup(embedding, self._enc_batch) # tensor with shape (batch_size, max_enc_steps, emb_size)
-                emb_dec_inputs = [tf.nn.embedding_lookup(embedding, x) for x in tf.unstack(self._dec_batch, axis=1)] # list length max_dec_steps containing shape (batch_size, emb_size)
+                emb_enc_inputs = tf.nn.embedding_lookup(embedding_in, self._enc_batch) # tensor with shape (batch_size, max_enc_steps, emb_size)
+                emb_dec_inputs = [tf.nn.embedding_lookup(embedding_out, x) for x in tf.unstack(self._dec_batch, axis=1)] # list length max_dec_steps containing shape (batch_size, emb_size)
                 if hps.use_pos_tag:
                     self._enc_pos = tf.placeholder(tf.int32, [hps.batch_size, None], name='enc_pos')
-                    pos_embedding = tf.get_variable('pos_tag', [self._vocab.pos_len, hps.pos_tag_dim], dtype=tf.float32, initializer=self.trunc_norm_init)
+                    pos_embedding = tf.get_variable('pos_tag', [self._vocab_in.pos_len, hps.pos_tag_dim], dtype=tf.float32, initializer=self.trunc_norm_init)
                     enc_pos_embedding = tf.nn.embedding_lookup(pos_embedding, self._enc_pos)
                     emb_enc_inputs = tf.concat(axis=-1, values=[emb_enc_inputs, enc_pos_embedding])
 
 
-            self.embedding = embedding
+            self.embedding_in = embedding_in
+            self.embedding_out = embedding_out
 
             # Add the encoder.
             enc_outputs, fw_st, bw_st = self._add_encoder(emb_enc_inputs, self._enc_lens)
@@ -338,8 +348,8 @@ class SummarizationModel(object):
                     decoder_outputs[i] = tf.nn.dropout(decoder_outputs[i],self._hps.dropout)
             # Add the output projection to obtain the vocabulary distribution
             with tf.variable_scope('output_projection'):
-                w = tf.get_variable('w', [hps.hidden_dim, vsize], dtype=tf.float32, initializer=self.trunc_norm_init)
-                v = tf.get_variable('v', [vsize], dtype=tf.float32, initializer=self.trunc_norm_init)
+                w = tf.get_variable('w', [hps.hidden_dim, vsize_out], dtype=tf.float32,initializer=self.trunc_norm_init)
+                v = tf.get_variable('v', [vsize_out], dtype=tf.float32, initializer=self.trunc_norm_init)
                 vocab_scores = []  # vocab_scores is the vocabulary distribution before applying softmax. Each entry on the list corresponds to one decoder step
                 for i, output in enumerate(decoder_outputs):
                     if i > 0:
@@ -454,11 +464,12 @@ class SummarizationModel(object):
     def assign_word_embedding(self):
         logging.info("load glove embedding from {}".format(self._hps.glove_dir))
         with self.graph.as_default():
-            embedding = self._vocab.load_word_embedding(self._hps.glove_dir,self._hps.emb_dim)
+            embedding = self._vocab_in.load_word_embedding(self._hps.glove_dir,self._hps.emb_dim)
+            self.gSess_train.run(self.embedding_in.assign(embedding))
 
-            self.gSess_train.run(self.embedding.assign(embedding))
-
-
+            if self._hps.shared_vocab==False:
+                embedding = self._vocab_out.load_word_embedding(self._hps.glove_dir, self._hps.emb_dim)
+                self.gSess_train.run(self.embedding_out.assign(embedding))
 
 
 
