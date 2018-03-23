@@ -82,7 +82,7 @@ class SummarizationModel(object):
         self._vocab_out = vocab_out
         self.batcher = batcher
         if self._hps.use_grammer_dict:
-            self.grammer_index = self._vocab_in.load_special_vocab_indexes(os.path.join(self._hps.data_path, "grammer"))
+            self.grammer_index = self._vocab_out.load_special_vocab_indexes(os.path.join(self._hps.data_path, "grammer"))
         self.feed_dict = None
 
 
@@ -213,6 +213,7 @@ class SummarizationModel(object):
         hps = self._hps
         cell = copy.deepcopy(self.cell_build)
 
+        match_probs = None
         prev_coverage = self.prev_coverage if hps.mode=="decode" and hps.coverage else None # In decode mode, we run attention_decoder one step at a time and so need to pass in the previous step's coverage vector each time
         if hps.mode == "decode":
             self.mask_context = tf.placeholder(tf.float32, [hps.batch_size, hps.hidden_dim * 2], name='mask_context')
@@ -228,16 +229,18 @@ class SummarizationModel(object):
                                                                                                prev_coverage=prev_coverage,
                                                                                                mask_context=self.mask_context)
         else:
-            outputs, out_state, attn_dists, p_gens, coverage,p_grammers = attention_decoder(inputs, self._dec_in_state,
+            outputs, out_state, attn_dists, p_gens, coverage,p_grammers,match_probs = attention_decoder(inputs, self._dec_in_state,
                                                                                  self._enc_states,
                                                                                  self._enc_padding_mask, cell,
                                                                                  initial_state_attention=(
                                                                                  hps.mode == "decode"),
                                                                                  pointer_gen=hps.pointer_gen,
                                                                                  use_coverage=hps.coverage,
-                                                                                 prev_coverage=prev_coverage)
+                                                                                 prev_coverage=prev_coverage,
+                                                                                 embedding=self.embedding_out)
 
         self.p_grammers = p_grammers
+        self.match_probs = match_probs
         return outputs, out_state, attn_dists, p_gens, coverage
 
     def _calc_final_dist(self, vocab_dists, attn_dists):
@@ -262,6 +265,7 @@ class SummarizationModel(object):
 
                     weights = self.grammer_indices_mask*p_first+self.reverse_grammer*p_second
                     tmp = dist * weights
+
                     new_vocab_with_grammer.append(tmp)
                     tmp2 = attn_dists[i]*p_third
                     new_attention_dist.append(tmp2)
@@ -354,7 +358,11 @@ class SummarizationModel(object):
                 for i, output in enumerate(decoder_outputs):
                     if i > 0:
                         tf.get_variable_scope().reuse_variables()
-                    vocab_scores.append(tf.nn.xw_plus_b(output, w, v))  # apply the linear layer
+
+                    tmp = tf.nn.xw_plus_b(output, w, v)# apply the linear layer
+                    predicate_weights = self.match_probs[i]
+                    tmp = tmp * predicate_weights
+                    vocab_scores.append(tmp)
 
                 vocab_dists = [tf.nn.softmax(s) for s in vocab_scores]  # The vocabulary distributions. List length max_dec_steps of (batch_size, vsize) arrays. The words are in the order they appear in the vocabulary file.
 

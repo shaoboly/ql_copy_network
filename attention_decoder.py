@@ -25,7 +25,7 @@ from tensorflow.python.ops import math_ops
 FLAGS = tf.app.flags.FLAGS
 # Note: this function is based on tf.contrib.legacy_seq2seq_attention_decoder, which is now outdated.
 # In the future, it would make more sense to write variants on the attention mechanism using the new seq2seq library for tensorflow 1.0: https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention
-def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding_mask, cell, initial_state_attention=False, pointer_gen=True, use_coverage=False, prev_coverage=None):
+def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding_mask, cell, initial_state_attention=False, pointer_gen=True, use_coverage=False, prev_coverage=None,embedding = None):
     """
     Args:
         decoder_inputs: A list of 2D Tensors [batch_size x input_size].
@@ -129,10 +129,16 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
 
             return context_vector, attn_dist, coverage
 
+        #prepare for embed_features
+        embed_features = linear(embedding, attn_size, False, scope="predicate")  # n * output_size(600)
+        embed_features = tf.expand_dims(embed_features, axis=0)  # 1 * n * output_size(600)
+        measure = variable_scope.get_variable("measure", [attn_size])
+
         outputs = []
         attn_dists = []
         p_gens = []
         p_grammers = []
+        match_probs = []
         state = initial_state
         coverage = prev_coverage # initialize coverage to None or whatever was passed in
         context_vector = array_ops.zeros([batch_size, attn_size])
@@ -161,6 +167,10 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
             else:
                 context_vector, attn_dist, coverage = attention(state,context_vector, coverage)
             attn_dists.append(attn_dist)
+
+            #Calc matching_score
+            matching_score = add_matching_score(embed_features,measure,state,context_vector)
+            match_probs.append(matching_score)
 
             # Calculate p_gen
             if pointer_gen:
@@ -191,7 +201,7 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
         if coverage is not None:
             coverage = array_ops.reshape(coverage, [batch_size, -1])
 
-        return outputs, state, attn_dists, p_gens, coverage,p_grammers
+        return outputs, state, attn_dists, p_gens, coverage,p_grammers,match_probs
 
 def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_states, enc_padding_mask, cell, initial_state_attention=False, pointer_gen=True, use_coverage=False, prev_coverage=None,mask_context = None):
     """
@@ -330,6 +340,7 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
                 context_vector, attn_dist, coverage = attention(state,context_vector, coverage)
             attn_dists.append(attn_dist)
 
+
             # Calculate p_gen
             if pointer_gen:
                 with tf.variable_scope('calculate_pgen'):
@@ -354,6 +365,24 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
             coverage = array_ops.reshape(coverage, [batch_size, -1])
 
         return outputs, state, attn_dists, p_gens, coverage,p_grammers
+
+def add_matching_score(embed_features,measure, decoder_features, context_vector):
+    n = embed_features.get_shape()[1].value
+
+    output_size = context_vector.get_shape()[1].value
+    BS = context_vector.get_shape()[0].value
+
+    decoder_features = linear(decoder_features,output_size,False,scope="state_pro_emb")
+    context_vector = linear(context_vector,output_size,False,scope="context_pro_emb")
+
+
+    decoder_features =tf.reshape(decoder_features,[-1,1,output_size])
+    context_vector = tf.reshape(context_vector,[-1,1,output_size])
+
+    predicate_weights = math_ops.reduce_sum(measure * math_ops.tanh(embed_features +decoder_features + context_vector),axis=-1)  # calculate e
+
+    predicate_weights = tf.reshape(predicate_weights,[BS,n])
+    return predicate_weights
 
 
 def linear(args, output_size, bias, bias_start=0.0, scope=None):

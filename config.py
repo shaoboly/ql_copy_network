@@ -27,7 +27,7 @@ tf.app.flags.DEFINE_string('cell_name', 'gru', 'must be one of lstm/gru')
 tf.app.flags.DEFINE_boolean('shared_vocab', False, "if True, vocab.out = vocab.in")
 tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
-tf.app.flags.DEFINE_boolean('use_grammer_dict', False,"use pretrain word2vec")
+tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_boolean('use_pos_tag', False,"use pretrain word2vec")
 
 
