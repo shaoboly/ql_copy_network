@@ -1,11 +1,11 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\complexwebquestions\complex"
+datadir= r"D:\data\seq2seq\complexwebquestions\fresh_data"
 
-train_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
-valid_f = open(datadir+r"\validation.txt",encoding="utf-8").readlines()
-test_f = open(datadir+r"\input.txt",encoding="utf-8").readlines()
+train_f = open(datadir+r"\complex.train.fresh",encoding="utf-8").readlines()
+valid_f = open(datadir+r"\complex.dev.fresh",encoding="utf-8").readlines()
+test_f = open(datadir+r"\complex.test.fresh",encoding="utf-8").readlines()
 
 train_out_f = open("train.txt","w",encoding="utf-8")
 valid_out_f = open("validation.txt","w",encoding="utf-8")
@@ -23,8 +23,9 @@ def generate_vocab(train_f,word_size):
         for w in line:
             w = w.strip()
             counter[w] += 1
-            if re.match("ns:.*?\..*?\.(.)+", w):
-            #if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
+
+            #if re.match("ns:.*?\..*?\.(.)+", w):
+            if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
                 predict[w] =1
 
     counter = counter.most_common(word_size)
@@ -123,12 +124,43 @@ def generate_training_file(train_f,train_out_f):
         line[1] = ' '.join(line[1].strip().split())
         train_out_f.write("{}\t{}\n".format(line[0],line[1]))
 
-#generate_vocab(train_f,50000)
-#generate_target_vocab_pre_only(train_f,20)
-#generate_source_vocab(train_f,10000)
+
+#generate_training_file(train_f,train_out_f)
+#generate_training_file(valid_f,valid_out_f)
+#generate_training_file(test_f,test_out_f)
+import re
+_SPLIT = re.compile("([,.])")
+def generate_fresh_data(train_f,train_out_f):
+    predicate_pattern = "(r-mso|mso):.*?\..*?\.(.)+"
+    for j,line in enumerate(train_f):
+        q,l = str(line).strip().lower().split("\t")[:2]
+        q = ' '.join(_SPLIT.split(q))
+
+        q = q.replace("’s", " 's")
+        q = q.replace("'s", " 's")
+
+        q = ' '.join(q.strip().split())
+
+        l = l.strip().split()
+        l_words = []
+        for i,w in enumerate(l):
+            if re.match(predicate_pattern,w) or w =="’s" or w =="'s":
+                l_words.append(w)
+            else:
+                w = " ".join(_SPLIT.split(w))
+                w = " _||_ ".join(w.split())
+                w = w.replace("’s"," _||_ 's")
+                w = w.replace("'s", " _||_ 's")
+                l_words.append(w)
+
+        l = ' '.join(l_words)
+        train_out_f.write("{}\t{}\n".format(q, l))
+
 generate_training_file(train_f,train_out_f)
 generate_training_file(valid_f,valid_out_f)
 generate_training_file(test_f,test_out_f)
 
-def generate_type_feature(train_f,train_out_f):
-    grammar_file = open("")
+
+generate_vocab(train_f,50000)
+generate_target_vocab(train_f,10000)
+generate_source_vocab(train_f,10000)

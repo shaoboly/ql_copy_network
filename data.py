@@ -70,11 +70,21 @@ class Vocab(object):
     def load_special_vocab_indexes(self,sp_dir):
         lines = open(sp_dir,encoding="utf-8")
         result = np.zeros((self.size()),dtype = np.float32)
+        self.grammar_id = []
         for line in lines:
             word = line.strip()
             idx = self.word2id(word)
+            self.grammar_id.append(idx)
             result[idx] = 1
         return result
+    def get_special_vocab_indexes(self,sp_dir):
+        lines = open(sp_dir,encoding="utf-8")
+        grammar_id = []
+        for line in lines:
+            word = line.strip()
+            idx = self.word2id(word)
+            grammar_id.append(idx)
+        return grammar_id
 
 
     def load_word_embedding(self,embedding_dir,embedding_dim =300):
@@ -102,6 +112,27 @@ class Vocab(object):
             self.id2tag[idx] = line
         self.pos_len = len(self.tag2id)
         self.pos_pad_id = self.tag2id["O"]
+
+
+    def compute_predicate_indices(self,embedding_dict):
+        import re
+        all_predicate_indexes = []
+        for i in range(self._count):
+            w = self.id2word(i)
+            if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
+                w = w.replace("r-mso:","")
+                w = w.replace("mso:", "")
+                subwords = w.split('.')
+                tmp = []
+                for sub in subwords:
+                    tmp.append(embedding_dict.word2id(sub))
+                all_predicate_indexes.append(np.array(tmp))
+            else:
+                c = embedding_dict.word2id(w)
+                tmp = [c,c,c]
+                all_predicate_indexes.append(np.array(tmp))
+
+        return np.array(all_predicate_indexes)
 
 def load_dict_data(FLAGS):
 

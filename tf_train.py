@@ -29,23 +29,20 @@ def train_with_eval(FLAGS):
     # load dictionary
     vocab_in, vocab_out = data.load_dict_data(FLAGS)
 
+    checkpoint_basename = os.path.join(FLAGS.log_root, "PointerGenerator_model")
+    logging.info(checkpoint_basename)
 
     logging.info("creating model...")
-
-
     train_model, dev_model = create_training_model(FLAGS, vocab_in,vocab_out)
+    train_model.save_model(checkpoint_basename)
 
     best_bleu, best_acc, dev_loss = validation_acc(dev_model, FLAGS)
     logging.info("bleu_now {}".format(best_bleu))
 
-
-    checkpoint_basename = os.path.join(FLAGS.log_root, "PointerGenerator_model")
-    logging.info(checkpoint_basename)
-
     tmpDevModel = checkpoint_basename+"tmp"
-    train_model.save_model(tmpDevModel, False)
+    #train_model.save_model(tmpDevModel, False)
     bad_valid = 0
-    bestDevModel = tmpDevModel
+    bestDevModel = tf.train.get_checkpoint_state(FLAGS.log_root).model_checkpoint_path
     while True:
         step = train_model.get_specific_variable(train_model.global_step)
         if step > FLAGS.max_run_steps:
@@ -218,6 +215,8 @@ def create_training_model(FLAGS,vocab_in, vocab_out = None):
 
     return train_model,dev_model
 
+
+
 def decode_Beam(FLAGS):
     # If in decode mode, set batch_size = beam_size
     # Reason: in decode mode, we decode one example at a time.
@@ -244,6 +243,18 @@ def decode_Beam(FLAGS):
     decoder.decode()
 
 
+def decode_my(FLAGS):
+    vocab_in, vocab_out = data.load_dict_data(FLAGS)
+    batcher = Batcher(FLAGS.data_path, vocab_in, vocab_out, FLAGS, data_file=FLAGS.test_name)
+    import eval
+    FLAGS_decode = config.retype_FLAGS()._asdict()
+    FLAGS_decode["max_dec_steps"] = 1
+    FLAGS_decode = config.generate_nametuple(FLAGS_decode)
+    model = SummarizationModel(FLAGS_decode, vocab_in, vocab_out, batcher)
+    decoder = eval.EvalDecoder(model, batcher, vocab_out)
+    decoder.decode()
+
+
 def main(unused_argv):
     FLAGS = config.FLAGS
     head = '[%(asctime)-15s %(levelname)s] %(message)s'
@@ -257,7 +268,7 @@ def main(unused_argv):
     elif FLAGS.mode == 'eval':
         pass
     elif FLAGS.mode == 'decode':
-        decode_Beam(FLAGS)
+        decode_my(FLAGS)
     else:
         raise ValueError("The 'mode' flag must be one of train/eval/decode")
 

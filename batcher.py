@@ -25,7 +25,7 @@ class Example:
             if len(pos_words) > config.max_enc_steps:
                 pos_words = pos_words[:config.max_enc_steps]
             assert len(pos_words)==len(article_words)
-            self.enc_pos = [vocab_out.tag2id[w] for w in pos_words]
+            self.enc_pos = [vocab_in.tag2id[w] for w in pos_words]
 
         # Process the abstract
         abstract = ' '.join(abstract_sentences)  # string
@@ -169,6 +169,13 @@ class Batch(object):
             for i, ex in enumerate(example_list):
                 self.enc_batch_extend_vocab[i, :] = ex.enc_input_extend_vocab[:]
 
+
+    def init_deocde_point_label(self,vocab_out):
+        self.pgen_label = []
+        grammar_indices = vocab_out.get_special_vocab_indexes("")
+        for i, target_out in enumerate(self.target_batch):
+            pass
+
     def init_decoder_seq(self, example_list, hps):
         """Initializes the following:
                 self.dec_batch:
@@ -257,7 +264,7 @@ class Batcher:
 
         example_list = []
         for i,instance in enumerate(batch_now):
-            article,abstract = instance.strip().split("\t")
+            article,abstract = instance.strip().split("\t")[:2]
             abstract=abstract.replace(data.SENTENCE_START,"").replace(data.SENTENCE_END,"")
             example = Example(article, [abstract], self._vocab, self._config)
             example_list.append(example)

@@ -130,9 +130,10 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
             return context_vector, attn_dist, coverage
 
         #prepare for embed_features
-        embed_features = linear(embedding, attn_size, False, scope="predicate")  # n * output_size(600)
-        embed_features = tf.expand_dims(embed_features, axis=0)  # 1 * n * output_size(600)
-        measure = variable_scope.get_variable("measure", [attn_size])
+        if FLAGS.match_attention:
+            embed_features = linear(embedding, attn_size, False, scope="predicate")  # n * output_size(600)
+            embed_features = tf.expand_dims(embed_features, axis=0)  # 1 * n * output_size(600)
+            measure = variable_scope.get_variable("measure", [attn_size])
 
         outputs = []
         attn_dists = []
@@ -169,8 +170,9 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
             attn_dists.append(attn_dist)
 
             #Calc matching_score
-            matching_score = add_matching_score(embed_features,measure,state,context_vector)
-            match_probs.append(matching_score)
+            if FLAGS.match_attention:
+                matching_score = add_matching_score(embed_features,measure,state,context_vector)
+                match_probs.append(matching_score)
 
             # Calculate p_gen
             if pointer_gen:
@@ -203,7 +205,7 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
 
         return outputs, state, attn_dists, p_gens, coverage,p_grammers,match_probs
 
-def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_states, enc_padding_mask, cell, initial_state_attention=False, pointer_gen=True, use_coverage=False, prev_coverage=None,mask_context = None):
+def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_states, enc_padding_mask, cell, initial_state_attention=False, pointer_gen=True, use_coverage=False, prev_coverage=None,mask_context = None , embedding = None):
     """
     Args:
         decoder_inputs: A list of 2D Tensors [batch_size x input_size].
@@ -255,7 +257,7 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
             # reshape from (batch_size, attn_length) to (batch_size, attn_len, 1, 1)
             prev_coverage = tf.expand_dims(tf.expand_dims(prev_coverage,2),3)
 
-        def attention(decoder_state,context_vector, coverage=None):
+        def attention(decoder_state,pre_context_vector, coverage=None):
             """Calculate the context vector and attention distribution from the decoder state.
 
             Args:
@@ -271,6 +273,7 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
                 # Pass the decoder state through a linear layer (this is W_s s_t + b_attn in the paper)
                 decoder_features = linear(decoder_state, attention_vec_size, True) # shape (batch_size, attention_vec_size)
                 decoder_features = tf.expand_dims(tf.expand_dims(decoder_features, 1), 1) # reshape to (batch_size, 1, 1, attention_vec_size)
+                pre_context_vector = linear(pre_context_vector,attention_vec_size,False,scope="pre_context_R")
 
                 def masked_attention(e):
                     """Take softmax of e then apply enc_padding_mask and re-normalize"""
@@ -293,7 +296,7 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
                     coverage += array_ops.reshape(attn_dist, [batch_size, -1, 1, 1])
                 else:
                     # Calculate v^T tanh(W_h h_i + W_s s_t + b_attn)
-                    e = math_ops.reduce_sum(v * math_ops.tanh(encoder_features + decoder_features + context_vector), [2, 3]) # calculate e
+                    e = math_ops.reduce_sum(v * math_ops.tanh(encoder_features + decoder_features + pre_context_vector), [2, 3]) # calculate e
 
                     # Calculate attention distribution
                     attn_dist = masked_attention(e)
@@ -306,18 +309,25 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
 
             return context_vector, attn_dist, coverage
 
+        #prepare for embed_features
+        if FLAGS.match_attention:
+            embed_features = linear(embedding, attn_size, False, scope="predicate")  # n * output_size(600)
+            embed_features = tf.expand_dims(embed_features, axis=0)  # 1 * n * output_size(600)
+            measure = variable_scope.get_variable("measure", [attn_size])
+
         outputs = []
         attn_dists = []
         p_gens = []
         p_grammers = []
+        match_probs = []
         state = initial_state
         coverage = prev_coverage # initialize coverage to None or whatever was passed in
         context_vector = array_ops.zeros([batch_size, attn_size])
         context_vector.set_shape([None, attn_size])	# Ensure the second shape of attention vectors is set.
         if initial_state_attention: # true in decode mode
             # Re-calculate the context vector from the previous step so that we can pass it through a linear layer with this step's input to get a modified version of the input
-            context_vector, _, coverage = attention(state,context_vector, coverage) # in decode mode, this is what updates the coverage vector
-        context_vector = context_vector*mask_context
+            context_vector, _, coverage = attention(initial_state,context_vector, coverage) # in decode mode, this is what updates the coverage vector
+        context_vector = context_vector * mask_context
         for i, inp in enumerate(decoder_inputs):
             #tf.logging.info("Adding attention_decoder timestep %i of %i", i, len(decoder_inputs))
             if i > 0:
@@ -328,9 +338,9 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
             if input_size.value is None:
                 raise ValueError("Could not infer input size from input: %s" % inp.name)
             x = linear([inp] + [context_vector], input_size, True)
-
             # Run the decoder RNN cell. cell_output = decoder state
             cell_output, state = cell(x, state)
+
 
             # Run the attention mechanism.
             if i == 0 and initial_state_attention:	# always true in decode mode
@@ -340,19 +350,29 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
                 context_vector, attn_dist, coverage = attention(state,context_vector, coverage)
             attn_dists.append(attn_dist)
 
+            #Calc matching_score
+            if FLAGS.match_attention:
+                matching_score = add_matching_score(embed_features,measure,state,context_vector)
+                match_probs.append(matching_score)
 
             # Calculate p_gen
             if pointer_gen:
-                with tf.variable_scope('calculate_pgen'):
-                    p_gen = linear([context_vector, state, x], 1, True) # a scalar
-                    p_gen = tf.sigmoid(p_gen)
-                    p_gens.append(p_gen)
+                if FLAGS.use_grammer_dict:
+                    with tf.variable_scope('calculate_pgen'):
+                        p_gen = linear([context_vector,state, x], 3, True) # a scalar
+                        p_gen = tf.nn.softmax(p_gen)
+                        p_gens.append(p_gen)
+                else:
+                    with tf.variable_scope('calculate_pgen'):
+                        p_gen = linear([context_vector,state, x], 1, True) # a scalar
+                        p_gen = tf.nn.sigmoid(p_gen)
+                        p_gens.append(p_gen)
 
-            if FLAGS.use_grammer_dict:
+            '''if FLAGS.use_grammer_dict:
                 with tf.variable_scope('calculate_pgram'):
                     p_g = linear([context_vector, state, x], 1, True)  # a scalar
                     p_g = tf.sigmoid(p_g)
-                    p_grammers.append(p_g)
+                    p_grammers.append(p_g)'''
 
             # Concatenate the cell_output (= decoder state) and the context vector, and pass them through a linear layer
             # This is V[s_t, h*_t] + b in the paper
@@ -364,7 +384,7 @@ def attention_decoder_fixed_context(decoder_inputs, initial_state, encoder_state
         if coverage is not None:
             coverage = array_ops.reshape(coverage, [batch_size, -1])
 
-        return outputs, state, attn_dists, p_gens, coverage,p_grammers
+        return outputs, state, attn_dists, p_gens, coverage,p_grammers,match_probs
 
 def add_matching_score(embed_features,measure, decoder_features, context_vector):
     n = embed_features.get_shape()[1].value

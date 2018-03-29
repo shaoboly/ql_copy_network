@@ -76,7 +76,7 @@ def linear(args, output_size, bias, bias_start=0.0, scope=None):
 class SummarizationModel(object):
     """A class to represent a sequence-to-sequence model for text summarization. Supports both baseline mode, pointer-generator mode, and coverage"""
 
-    def __init__(self, hps, vocab_in,vocab_out,batcher):
+    def __init__(self, hps, vocab_in,vocab_out,batcher,append_data = None):
         self._hps = hps
         self._vocab_in = vocab_in
         self._vocab_out = vocab_out
@@ -84,6 +84,7 @@ class SummarizationModel(object):
         if self._hps.use_grammer_dict:
             self.grammer_index = self._vocab_out.load_special_vocab_indexes(os.path.join(self._hps.data_path, "grammer"))
         self.feed_dict = None
+        self.append_data = append_data
 
 
     def _add_placeholders(self):
@@ -213,21 +214,24 @@ class SummarizationModel(object):
         hps = self._hps
         cell = copy.deepcopy(self.cell_build)
 
+        if self._hps.match_attention:
+            new_match_embedding = self.find_predicate_attention()
+        else:
+            new_match_embedding = None
         match_probs = None
         prev_coverage = self.prev_coverage if hps.mode=="decode" and hps.coverage else None # In decode mode, we run attention_decoder one step at a time and so need to pass in the previous step's coverage vector each time
         if hps.mode == "decode":
             self.mask_context = tf.placeholder(tf.float32, [hps.batch_size, hps.hidden_dim * 2], name='mask_context')
-            outputs, out_state, attn_dists, p_gens, coverage,p_grammers = attention_decoder_fixed_context(inputs,
-                                                                                               self._dec_in_state,
+            outputs, out_state, attn_dists, p_gens, coverage,p_grammers, match_probs = attention_decoder_fixed_context(inputs,self._dec_in_state,
                                                                                                self._enc_states,
-                                                                                               self._enc_padding_mask,
-                                                                                               cell,
+                                                                                               self._enc_padding_mask,cell,
                                                                                                initial_state_attention=(
                                                                                                hps.mode == "decode"),
                                                                                                pointer_gen=hps.pointer_gen,
                                                                                                use_coverage=hps.coverage,
                                                                                                prev_coverage=prev_coverage,
-                                                                                               mask_context=self.mask_context)
+                                                                                               mask_context=self.mask_context,
+                                                                                               embedding=new_match_embedding)
         else:
             outputs, out_state, attn_dists, p_gens, coverage,p_grammers,match_probs = attention_decoder(inputs, self._dec_in_state,
                                                                                  self._enc_states,
@@ -237,7 +241,7 @@ class SummarizationModel(object):
                                                                                  pointer_gen=hps.pointer_gen,
                                                                                  use_coverage=hps.coverage,
                                                                                  prev_coverage=prev_coverage,
-                                                                                 embedding=self.embedding_out)
+                                                                                 embedding=new_match_embedding)
 
         self.p_grammers = p_grammers
         self.match_probs = match_probs
@@ -259,9 +263,9 @@ class SummarizationModel(object):
                 new_attention_dist = []
                 for i,dist in enumerate(vocab_dists):
                     p_gram = self.p_gens[i]
-                    p_first = tf.slice(p_gram,[0,0],[32,1])
-                    p_second = tf.slice(p_gram, [0, 1], [32, 1])
-                    p_third = tf.slice(p_gram, [0, 2], [32, 1])
+                    p_first = tf.slice(p_gram,[0,0],[self._hps.batch_size,1])
+                    p_second = tf.slice(p_gram, [0, 1], [self._hps.batch_size, 1])
+                    p_third = tf.slice(p_gram, [0, 2], [self._hps.batch_size, 1])
 
                     weights = self.grammer_indices_mask*p_first+self.reverse_grammer*p_second
                     tmp = dist * weights
@@ -301,6 +305,13 @@ class SummarizationModel(object):
 
             return final_dists
 
+    def find_predicate_attention(self):
+        subwords_embedding = self._vocab_out.compute_predicate_indices(self._vocab_in)
+        attention_subwords = tf.constant(subwords_embedding, dtype=tf.int32)
+        attention_embedding = tf.nn.embedding_lookup(self.embedding_in, attention_subwords)
+
+        reduce_attention_embedding = tf.reduce_mean(attention_embedding,axis=1)
+        return reduce_attention_embedding
 
     def _add_seq2seq(self):
         """Add the whole sequence-to-sequence model to the graph."""
@@ -360,8 +371,9 @@ class SummarizationModel(object):
                         tf.get_variable_scope().reuse_variables()
 
                     tmp = tf.nn.xw_plus_b(output, w, v)# apply the linear layer
-                    predicate_weights = self.match_probs[i]
-                    tmp = tmp * predicate_weights
+                    if self._hps.match_attention:
+                        predicate_weights = self.match_probs[i]
+                        tmp = tmp * predicate_weights
                     vocab_scores.append(tmp)
 
                 vocab_dists = [tf.nn.softmax(s) for s in vocab_scores]  # The vocabulary distributions. List length max_dec_steps of (batch_size, vsize) arrays. The words are in the order they appear in the vocabulary file.
@@ -414,9 +426,10 @@ class SummarizationModel(object):
 
         if hps.mode == "decode":
             # We run decode beam search mode one decoder step at a time
-            assert len(final_dists)==1 # final_dists is a singleton list containing shape (batch_size, extended_vsize)
-            final_dists = final_dists[0]
-            topk_probs, self._topk_ids = tf.nn.top_k(final_dists, hps.batch_size*2) # take the k largest probs. note batch_size=beam_size in decode mode
+            #assert len(final_dists)==1 # final_dists is a singleton list containing shape (batch_size, extended_vsize)
+            #final_dists = final_dists[0]
+            final_dists = final_dists
+            topk_probs, self._topk_ids = tf.nn.top_k(final_dists, self._hps.beam_size) # take the k largest probs. note batch_size=beam_size in decode mode
             self._topk_log_probs = tf.log(topk_probs)
 
 
@@ -528,6 +541,25 @@ class SummarizationModel(object):
         dec_in_state =dec_in_state[0]
         return enc_states, dec_in_state
 
+    def run_encoder_eval(self, sess, batch):
+        """For beam search decoding. Run the encoder on the batch and return the encoder states and decoder initial state.
+
+        Args:
+            sess: Tensorflow session.
+            batch: Batch object that is the same example repeated across the batch (for beam search)
+
+        Returns:
+            enc_states: The encoder states. A tensor of shape [batch_size, <=max_enc_steps, 2*hidden_dim].
+            dec_in_state: A LSTMStateTuple of shape ([1,hidden_dim],[1,hidden_dim])
+        """
+        feed_dict = self._make_feed_dict(batch, just_enc=True) # feed the batch into the placeholders
+        (enc_states, dec_in_state, global_step) = sess.run([self._enc_states, self._dec_in_state, self.global_step], feed_dict) # run the encoder
+
+        # dec_in_state is LSTMStateTuple shape ([batch_size,hidden_dim],[batch_size,hidden_dim])
+        # Given that the batch is a single example repeated, dec_in_state is identical across the batch so we just take the top row.
+        #dec_in_state = tf.contrib.rnn.LSTMStateTuple(dec_in_state.c[0], dec_in_state.h[0])
+        dec_in_state =dec_in_state
+        return enc_states, dec_in_state
 
     def decode_onestep(self, sess, batch, latest_tokens, enc_states, dec_init_states, prev_coverage,first):
         """For beam search decoding. Run the decoder for one step.

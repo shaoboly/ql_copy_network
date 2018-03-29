@@ -15,9 +15,9 @@ FLAGS = tf.app.flags.FLAGS
 # Where to find data
 tf.app.flags.DEFINE_string('data_path', '', 'Path expression to tf.Example datafiles. Can include wildcards to access multiple datafiles.')
 tf.app.flags.DEFINE_string('vocab_path', '', 'Path expression to text vocabulary file.')
-tf.app.flags.DEFINE_string('train_name', 'train.txt', 'train file.')
-tf.app.flags.DEFINE_string('dev_name', 'input.txt', 'dev file.')
-tf.app.flags.DEFINE_string('test_name', 'input.txt', 'dev file.')
+tf.app.flags.DEFINE_string('train_name', 'train.txt.mreal', 'train file.')
+tf.app.flags.DEFINE_string('dev_name', 'input.txt.mreal', 'dev file.')
+tf.app.flags.DEFINE_string('test_name', 'input.txt.mreal', 'dev file.')
 
 # Important settings
 tf.app.flags.DEFINE_string('mode', 'train', 'must be one of train/eval/decode')
@@ -27,9 +27,9 @@ tf.app.flags.DEFINE_string('cell_name', 'gru', 'must be one of lstm/gru')
 tf.app.flags.DEFINE_boolean('shared_vocab', False, "if True, vocab.out = vocab.in")
 tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
-tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use pretrain word2vec")
-tf.app.flags.DEFINE_boolean('use_pos_tag', False,"use pretrain word2vec")
-
+tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use_grammer_dict")
+tf.app.flags.DEFINE_boolean('use_pos_tag', True,"use_pos_tag")
+tf.app.flags.DEFINE_boolean('match_attention', True,"match_attention")
 
 
 # Where to save output
@@ -39,10 +39,10 @@ tf.app.flags.DEFINE_string('exp_name', '', 'Name for experiment. Logs will be sa
 # Hyperparameters
 tf.app.flags.DEFINE_integer('hidden_dim', 300, 'dimension of RNN hidden states')
 tf.app.flags.DEFINE_integer('emb_dim', 300, 'dimension of word embeddings')
-tf.app.flags.DEFINE_integer('batch_size', 64, 'minibatch size')
+tf.app.flags.DEFINE_integer('batch_size', 32, 'minibatch size')
 tf.app.flags.DEFINE_integer('max_enc_steps', 30, 'max timesteps of encoder (max source text tokens)')
 tf.app.flags.DEFINE_integer('max_dec_steps', 30, 'max timesteps of decoder (max summary tokens)')
-tf.app.flags.DEFINE_integer('beam_size', 4, 'beam size for beam search decoding.')
+tf.app.flags.DEFINE_integer('beam_size', 1, 'beam size for beam search decoding.')
 tf.app.flags.DEFINE_integer('min_dec_steps', 1, 'Minimum sequence length of generated summary. Applies only for beam search decoding mode')
 tf.app.flags.DEFINE_integer('vocab_size', 50000, 'Size of vocabulary. These will be read from the vocabulary file in order. If the vocabulary file contains fewer words than this number, or if this number is set to 0, will take all words in the vocabulary file.')
 tf.app.flags.DEFINE_float('lr', 0.15, 'learning rate')
