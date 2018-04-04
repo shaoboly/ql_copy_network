@@ -1,11 +1,11 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\complexwebquestions\fresh_data"
+datadir= r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s"
 
-train_f = open(datadir+r"\complex.train.fresh",encoding="utf-8").readlines()
-valid_f = open(datadir+r"\complex.dev.fresh",encoding="utf-8").readlines()
-test_f = open(datadir+r"\complex.test.fresh",encoding="utf-8").readlines()
+train_f = open(datadir+r"\train.txt_tag",encoding="utf-8").readlines()
+valid_f = open(datadir+r"\train.txt_tag",encoding="utf-8").readlines()
+test_f = open(datadir+r"\train.txt_tag",encoding="utf-8").readlines()
 
 train_out_f = open("train.txt","w",encoding="utf-8")
 valid_out_f = open("validation.txt","w",encoding="utf-8")
@@ -39,6 +39,39 @@ def generate_vocab(train_f,word_size):
             if w[1]>=4:
                 vocab.write("{} {}\n".format(w[0], w[1]))
     vocab.close()
+
+
+def generate_predicate_vocab(train_f,word_size):
+    counter = collections.Counter()
+    predict = {}
+    for line in train_f:
+        line = str(line).strip().lower().split('\t')
+
+        predicate = line[1].split()
+
+        line = line[0].split()
+
+
+        for w in line:
+            w = w.strip()
+            counter[w] += 1
+
+        for w in predicate:
+            if re.match("(r-mso|mso):.*?\..*?\.(.)+", w):
+                w =w.split(':')[1]
+                w_all = w.split('.')
+                for tmp in w_all:
+                    counter[tmp] += 4
+
+    counter = counter.most_common(word_size)
+
+    vocab = open("vocab.in", "w", encoding="utf-8")
+
+    for i, w in enumerate(counter):
+        if w[1] >= 4:
+            vocab.write("{} {}\n".format(w[0], w[1]))
+    vocab.close()
+
 
 import re
 def generate_target_vocab(train_f,word_size):
@@ -155,7 +188,7 @@ def generate_fresh_data(train_f,train_out_f):
 
         l = ' '.join(l_words)
         train_out_f.write("{}\t{}\n".format(q, l))
-
+'''
 generate_training_file(train_f,train_out_f)
 generate_training_file(valid_f,valid_out_f)
 generate_training_file(test_f,test_out_f)
@@ -164,3 +197,7 @@ generate_training_file(test_f,test_out_f)
 generate_vocab(train_f,50000)
 generate_target_vocab(train_f,10000)
 generate_source_vocab(train_f,10000)
+
+'''
+generate_predicate_vocab(train_f,10000)
+#generate_predicate_vocab(train_f,50000)

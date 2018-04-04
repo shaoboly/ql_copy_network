@@ -101,6 +101,7 @@ class Vocab(object):
             #final_embedding[idx] = norm_vector(final_embedding[idx])
         return final_embedding
 
+
     def load_Pos_dict(self,pos_dir):
         in_f = open(pos_dir, encoding="utf-8")
         self.tag2id ={}

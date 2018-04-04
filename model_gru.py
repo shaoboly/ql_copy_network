@@ -216,6 +216,8 @@ class SummarizationModel(object):
 
         if self._hps.match_attention:
             new_match_embedding = self.find_predicate_attention()
+            #new_match_embedding = self.embedding_out
+
         else:
             new_match_embedding = None
         match_probs = None
@@ -309,6 +311,7 @@ class SummarizationModel(object):
         subwords_embedding = self._vocab_out.compute_predicate_indices(self._vocab_in)
         attention_subwords = tf.constant(subwords_embedding, dtype=tf.int32)
         attention_embedding = tf.nn.embedding_lookup(self.embedding_in, attention_subwords)
+        
 
         reduce_attention_embedding = tf.reduce_mean(attention_embedding,axis=1)
         return reduce_attention_embedding
@@ -327,11 +330,19 @@ class SummarizationModel(object):
             # Add embedding matrix (shared by the encoder and decoder inputs)
             with tf.variable_scope('embedding'):
                 embedding_in = tf.get_variable('embedding_in', [vsize_en, hps.emb_dim], dtype=tf.float32,initializer=self.trunc_norm_init)
+                self.original_embedding_in = embedding_in
+                if hps.cor_embedding:
+                    self._extra_embedding_in = tf.get_variable('extra_embedding_in', [vsize_en, 100], dtype=tf.float32,initializer=self.trunc_norm_init)
+                    embedding_in = tf.concat([embedding_in,self._extra_embedding_in],axis=-1)
+
                 if self._hps.shared_vocab:
                     embedding_out = embedding_in
                 else:
-                    embedding_out = tf.get_variable('embedding_out', [vsize_out, hps.emb_dim], dtype=tf.float32,
-                                                    initializer=self.trunc_norm_init)
+                    embedding_out = tf.get_variable('embedding_out', [vsize_out, hps.emb_dim], dtype=tf.float32,initializer=self.trunc_norm_init)
+                    self.original_embedding_out = embedding_out
+                    if hps.cor_embedding:
+                        self._extra_embedding_out = tf.get_variable('extra_embedding_out', [vsize_out, 100], dtype=tf.float32,initializer=self.trunc_norm_init)
+                        embedding_out = tf.concat([embedding_out,self._extra_embedding_out],axis=-1)
 
                 #if hps.mode=="train": self._add_emb_vis(embedding) # add to tensorboard
                 emb_enc_inputs = tf.nn.embedding_lookup(embedding_in, self._enc_batch) # tensor with shape (batch_size, max_enc_steps, emb_size)
@@ -341,6 +352,7 @@ class SummarizationModel(object):
                     pos_embedding = tf.get_variable('pos_tag', [self._vocab_in.pos_len, hps.pos_tag_dim], dtype=tf.float32, initializer=self.trunc_norm_init)
                     enc_pos_embedding = tf.nn.embedding_lookup(pos_embedding, self._enc_pos)
                     emb_enc_inputs = tf.concat(axis=-1, values=[emb_enc_inputs, enc_pos_embedding])
+
 
 
             self.embedding_in = embedding_in
@@ -373,6 +385,7 @@ class SummarizationModel(object):
                     tmp = tf.nn.xw_plus_b(output, w, v)# apply the linear layer
                     if self._hps.match_attention:
                         predicate_weights = self.match_probs[i]
+                        #predicate_weights = self.match_probs[i] * self.reverse_grammer + self.grammer_indices_mask
                         tmp = tmp * predicate_weights
                     vocab_scores.append(tmp)
 
@@ -426,10 +439,13 @@ class SummarizationModel(object):
 
         if hps.mode == "decode":
             # We run decode beam search mode one decoder step at a time
-            #assert len(final_dists)==1 # final_dists is a singleton list containing shape (batch_size, extended_vsize)
-            #final_dists = final_dists[0]
-            final_dists = final_dists
-            topk_probs, self._topk_ids = tf.nn.top_k(final_dists, self._hps.beam_size) # take the k largest probs. note batch_size=beam_size in decode mode
+            assert len(final_dists)==1 # final_dists is a singleton list containing shape (batch_size, extended_vsize)
+            final_dists = final_dists[0]
+            #final_dists = final_dists
+            if self._hps.beam_size>1:
+                topk_probs, self._topk_ids = tf.nn.top_k(final_dists, self._hps.beam_size*2) # take the k largest probs. note batch_size=beam_size in decode mode
+            else:
+                topk_probs, self._topk_ids = tf.nn.top_k(final_dists,1)  # take the k largest probs. note batch_size=beam_size in decode mode
             self._topk_log_probs = tf.log(topk_probs)
 
 
@@ -486,11 +502,19 @@ class SummarizationModel(object):
         logging.info("load glove embedding from {}".format(self._hps.glove_dir))
         with self.graph.as_default():
             embedding = self._vocab_in.load_word_embedding(self._hps.glove_dir,self._hps.emb_dim)
-            self.gSess_train.run(self.embedding_in.assign(embedding))
+            self.gSess_train.run(self.original_embedding_in.assign(embedding))
+
+            if self._hps.cor_embedding ==True:
+                logging.info("load cor_embedding from {}".format(self._hps.cor_embedding_dir))
+                cor_embedding = self._vocab_in.load_word_embedding(self._hps.cor_embedding_dir,100)
+                self.gSess_train.run(self._extra_embedding_in.assign(cor_embedding))
 
             if self._hps.shared_vocab==False:
                 embedding = self._vocab_out.load_word_embedding(self._hps.glove_dir, self._hps.emb_dim)
-                self.gSess_train.run(self.embedding_out.assign(embedding))
+                self.gSess_train.run(self.original_embedding_out.assign(embedding))
+                if self._hps.cor_embedding == True:
+                    cor_embedding = self._vocab_out.load_word_embedding(self._hps.cor_embedding_dir, 100)
+                    self.gSess_train.run(self._extra_embedding_out.assign(cor_embedding))
 
 
 

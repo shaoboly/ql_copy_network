@@ -17,7 +17,9 @@ FLAGS = tf.app.flags.FLAGS
 
 SECS_UNTIL_NEW_CKPT = 60  # max number of seconds before loading new checkpoint
 
-
+def sort_hyps(hyps):
+  """Return a list of Hypothesis objects, sorted by descending average log probability"""
+  return sorted(hyps, key=lambda h: h.avg_log_prob + FLAGS.beta * h.len, reverse=True)
 class Hypothesis(object):
     """Class to represent a hypothesis during beam search. Holds all the information needed for the hypothesis."""
 
@@ -134,6 +136,34 @@ class EvalDecoder(object):
         #  self._rouge_dec_dir = os.path.join(self._decode_dir, "decoded")
         #  if not os.path.exists(self._rouge_dec_dir): os.mkdir(self._rouge_dec_dir)
 
+    def decode_one_question(self,batch):
+        """Decode examples until data is exhausted (if FLAGS.single_pass) and return, or decode indefinitely, loading latest checkpoint at regular intervals"""
+        t0 = time.time()
+        counter = 0
+
+        f = os.path.join(FLAGS.log_root, "output.txt")
+        # print("----------------"+f)
+        outputfile = codecs.open(f, "w", "utf8")
+        output_result = []
+        list_of_reference = []
+        print(self._batcher.c_index)
+
+        # Run beam search to get best Hypothesis
+        result = self.eval_one_batch(self._sess, self._model, self._vocab, batch)
+
+        i=0
+        out_words = data.outputids2words(result[i], self._model._vocab_out, batch.art_oovs[i])
+        if data.STOP_DECODING in out_words:
+            out_words = out_words[:out_words.index(data.STOP_DECODING)]
+        output_now = " ".join(out_words)
+        output_result.append(output_now)
+        # refer = " ".join(refer)
+
+        refer = batch.original_abstracts[i].strip()
+        list_of_reference.append([refer])
+
+        return batch.original_articles[i], batch.original_abstracts[i], output_now
+
     def decode(self):
         """Decode examples until data is exhausted (if FLAGS.single_pass) and return, or decode indefinitely, loading latest checkpoint at regular intervals"""
         t0 = time.time()
@@ -169,14 +199,14 @@ class EvalDecoder(object):
                 out_words = data.outputids2words(instance, self._model._vocab_out, batch.art_oovs[i])
                 if data.STOP_DECODING in out_words:
                     out_words = out_words[:out_words.index(data.STOP_DECODING)]
-                    output_now = " ".join(out_words)
-                    output_result.append(output_now)
+                output_now = " ".join(out_words)
+                output_result.append(output_now)
                     # refer = " ".join(refer)
 
-                    refer = batch.original_abstracts[i].strip()
-                    list_of_reference.append([refer])
+                refer = batch.original_abstracts[i].strip()
+                list_of_reference.append([refer])
 
-                    outputfile.write(batch.original_articles[i] + '\t' + batch.original_abstracts[i] + '\t' + output_now + '\n')
+                outputfile.write(batch.original_articles[i] + '\t' + batch.original_abstracts[i] + '\t' + output_now + '\n')
 
         bleu = matrix.bleu_score(list_of_reference, output_result)
         acc = matrix.compute_acc(list_of_reference, output_result)
@@ -218,6 +248,77 @@ class EvalDecoder(object):
         results = np.array(results).T
         return results
 
+    def basic_beam_search(self,sess, model, vocab_out, batch,top_k):
+        enc_states, dec_in_state = model.run_encoder(sess, batch)
+        hyps = [Hypothesis(tokens=[vocab_out.word2id(data.START_DECODING)],
+                           log_probs=[0.0],
+                           state=dec_in_state,
+                           attn_dists=[],
+                           p_gens=[],
+                           coverage=np.zeros([batch.enc_batch.shape[1]]),  # zero vector of length attention_length
+                           len=0) for _ in range(FLAGS.beam_size)]
+        results = []  # this will contain finished hypotheses (those that have emitted the [STOP] token)
+        steps = 0
+        while steps < FLAGS.max_dec_steps and len(results) < FLAGS.beam_size:
+            latest_tokens = [h.latest_token for h in hyps]  # latest token produced by each hypothesis
+            latest_tokens = [t if t in range(vocab_out.size()) else vocab_out.word2id(data.UNKNOWN_TOKEN) for t in
+                             latest_tokens]  # change any in-article temporary OOV ids to [UNK] id, so that we can lookup word embeddings
+            states = [h.state for h in hyps]  # list of current decoder states of the hypotheses
+            prev_coverage = [h.coverage for h in hyps]  # list of coverage vectors (or None)
+            (topk_ids, topk_log_probs, new_states, attn_dists, p_gens, new_coverage) = model.decode_onestep(sess=sess,
+                                                                                                            batch=batch,
+                                                                                                            latest_tokens=latest_tokens,
+                                                                                                            enc_states=enc_states,
+                                                                                                            dec_init_states=states,
+                                                                                                            prev_coverage=prev_coverage,
+                                                                                                            first=(
+                                                                                                            steps == 0))
+
+            # Extend each hypothesis and collect them all in all_hyps
+            all_hyps = []
+            num_orig_hyps = 1 if steps == 0 else len(
+                hyps)  # On the first step, we only had one original hypothesis (the initial hypothesis). On subsequent steps, all original hypotheses are distinct.
+            for i in range(num_orig_hyps):
+                h, new_state, attn_dist, p_gen, new_coverage_i = hyps[i], new_states[i], attn_dists[i], p_gens[i], \
+                                                                 new_coverage[
+                                                                     i]  # take the ith hypothesis and new decoder state info
+                for j in range(FLAGS.beam_size * 2):  # for each of the top 2*beam_size hyps:
+                    # Extend the ith hypothesis with the jth option
+                    new_hyp = h.extend(token=topk_ids[i, j],
+                                       log_prob=topk_log_probs[i, j],
+                                       state=new_state,
+                                       attn_dist=attn_dist,
+                                       p_gen=p_gen,
+                                       coverage=new_coverage_i,
+                                       len=steps + 1)
+                    all_hyps.append(new_hyp)
+
+            # Filter and collect any hypotheses that have produced the end token.
+            hyps = []  # will contain hypotheses for the next step
+            for h in sort_hyps(all_hyps):  # in order of most likely h
+                if h.latest_token == vocab_out.word2id(data.STOP_DECODING):  # if stop token is reached...
+                    # If this hypothesis is sufficiently long, put in results. Otherwise discard.
+                    if steps >= FLAGS.min_dec_steps:
+                        results.append(h)
+                else:  # hasn't reached stop token, so continue to extend this hypothesis
+                    hyps.append(h)
+                if len(hyps) == FLAGS.beam_size or len(results) == FLAGS.beam_size:
+                    # Once we've collected beam_size-many hypotheses for the next step, or beam_size-many complete hypotheses, stop.
+                    break
+
+            steps += 1
+
+            # At this point, either we've got beam_size results, or we've reached maximum decoder steps
+
+        if len(results) == 0:  # if we don't have any complete results, add all current hypotheses (incomplete summaries) to results
+            results = hyps
+
+        # Sort hypotheses by average log probability
+        hyps_sorted = sort_hyps(results)
+
+        # Return the hypothesis with highest average log prob
+        return hyps_sorted[:top_k]
+
     def beam_search_eval(self,sess, model, vocab_out, batch):
         enc_states, dec_in_state = model.run_encoder_eval(sess, batch)
 
@@ -227,16 +328,67 @@ class EvalDecoder(object):
         steps = 0
 
 
-        latest_tokens = [vocab_out.word2id(data.START_DECODING) for i in
-                         range(FLAGS.batch_size)]  # latest token produced by each hypothesis
-
+        latest_tokens = [vocab_out.word2id(data.START_DECODING) for i in range(FLAGS.batch_size)]  # latest token produced by each hypothesis
 
         pre_state = dec_in_state
         prev_coverage = None
 
+        candidate_batch_tmp = Candidate_batch(latest_tokens,pre_state,np.zeros([FLAGS.batch_size,1],dtype=np.float32),None)
+        candidate_list = [candidate_batch_tmp]
+
+        final_result = []
+
         while steps < FLAGS.max_dec_steps:
-            latest_tokens = [t if t in range(vocab_out.size()) else vocab_out.word2id(data.UNKNOWN_TOKEN) for t in
-                             latest_tokens]
+
+            def run_hypo(candidate_list):
+                topk_result = None
+                top_log_probs_result = None
+                for candidate_batch_now in candidate_list:
+                    latest_tokens = candidate_batch_now.tokens
+                    latest_tokens = [t if t in range(vocab_out.size()) else vocab_out.word2id(data.UNKNOWN_TOKEN) for t in latest_tokens]
+                    pre_state = candidate_batch_now.last_states
+
+                    # Run one step of the decoder to get the new info
+                    (topk_ids, topk_log_probs, new_states, attn_dists, p_gens, new_coverage) = model.decode_onestep(
+                        sess=sess,
+                        batch=batch,
+                        latest_tokens=latest_tokens,
+                        enc_states=enc_states,
+                        dec_init_states=pre_state,
+                        prev_coverage=prev_coverage,
+                        first=(steps == 0))
+
+                    topk_log_probs = np.reshape(topk_log_probs,[FLAGS.batch_size,FLAGS.beam_size])
+                    topk_log_probs+=candidate_batch_now.logScores
+
+                    topk_ids = np.reshape(topk_ids, [FLAGS.batch_size, FLAGS.beam_size])
+
+                    if topk_result==None:
+                        topk_result = topk_ids
+                        top_log_probs_result = topk_log_probs
+                    else:
+                        topk_result = np.hstack([topk_result,topk_ids])
+                        top_log_probs_result = np.hstack([top_log_probs_result,topk_log_probs])
+                return topk_result,top_log_probs_result
+
+            topk_result, top_log_probs_result = run_hypo(candidate_list)
+
+            def generate_top_result(topk_result,top_log_probs_result):
+                all_top_beam_result = []
+                all_top_beam_logScore = []
+                for i,logs in enumerate(top_log_probs_result):
+                    topk_tokens = topk_result[i]
+                    tmp_result = np.stack([logs,topk_tokens],axis=1)
+                    tmp_result = sorted(tmp_result,key=lambda x:x[0],reverse=True)
+                    tmp_result = np.array(tmp_result[:FLAGS.beam_size])
+                    tmp_result = tmp_result.T
+                    all_top_beam_logScore.append(tmp_result[0])
+                    all_top_beam_result.append(tmp_result[1])
+                return all_top_beam_result,all_top_beam_logScore
+
+            all_top_beam_result, all_top_beam_logScore = generate_top_result(topk_result, top_log_probs_result)
+
+
             # Run one step of the decoder to get the new info
             (topk_ids, topk_log_probs, new_states, attn_dists, p_gens, new_coverage) = model.decode_onestep(sess=sess,
                                                                                                             batch=batch,
@@ -251,6 +403,8 @@ class EvalDecoder(object):
 
             pre_state = new_states
             latest_tokens = topk_ids
+            latest_tokens = [t if t in range(vocab_out.size()) else vocab_out.word2id(data.UNKNOWN_TOKEN) for t in
+                             latest_tokens]
 
             steps += 1
 

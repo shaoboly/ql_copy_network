@@ -15,9 +15,9 @@ FLAGS = tf.app.flags.FLAGS
 # Where to find data
 tf.app.flags.DEFINE_string('data_path', '', 'Path expression to tf.Example datafiles. Can include wildcards to access multiple datafiles.')
 tf.app.flags.DEFINE_string('vocab_path', '', 'Path expression to text vocabulary file.')
-tf.app.flags.DEFINE_string('train_name', 'train.txt.mreal', 'train file.')
-tf.app.flags.DEFINE_string('dev_name', 'input.txt.mreal', 'dev file.')
-tf.app.flags.DEFINE_string('test_name', 'input.txt.mreal', 'dev file.')
+tf.app.flags.DEFINE_string('train_name', 'train.txt', 'train file.')
+tf.app.flags.DEFINE_string('dev_name', 'input.txt', 'dev file.')
+tf.app.flags.DEFINE_string('test_name', 'input.txt', 'dev file.')
 
 # Important settings
 tf.app.flags.DEFINE_string('mode', 'train', 'must be one of train/eval/decode')
@@ -28,8 +28,10 @@ tf.app.flags.DEFINE_boolean('shared_vocab', False, "if True, vocab.out = vocab.i
 tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
 tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use_grammer_dict")
-tf.app.flags.DEFINE_boolean('use_pos_tag', True,"use_pos_tag")
-tf.app.flags.DEFINE_boolean('match_attention', True,"match_attention")
+tf.app.flags.DEFINE_boolean('use_pos_tag', False,"use_pos_tag")
+tf.app.flags.DEFINE_boolean('match_attention', False,"match_attention")
+tf.app.flags.DEFINE_boolean('cor_embedding', False,"match_attention")
+tf.app.flags.DEFINE_string('cor_embedding_dir', r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\vector.tsv", 'glove dir')
 
 
 # Where to save output
@@ -48,6 +50,7 @@ tf.app.flags.DEFINE_integer('vocab_size', 50000, 'Size of vocabulary. These will
 tf.app.flags.DEFINE_float('lr', 0.15, 'learning rate')
 tf.app.flags.DEFINE_float('learning_rate_decay_factor', 0.5, 'learning rate')
 tf.app.flags.DEFINE_integer('pos_tag_dim', 50, 'dimension of word embeddings')
+
 
 tf.app.flags.DEFINE_integer('badvalid', 10, 'badvalid.')
 
@@ -75,7 +78,7 @@ tf.app.flags.DEFINE_integer('max_run_steps', 10000000,
 # Save frequency
 tf.app.flags.DEFINE_integer('save_model_step', 100, 'How often to save the model')
 tf.app.flags.DEFINE_integer('valid_step', 1000, 'How often to save the model')
-tf.app.flags.DEFINE_integer('best_k_hyp', 5, 'Best k hypotheses')
+tf.app.flags.DEFINE_integer('best_k_hyp', 1, 'Best k hypotheses')
 tf.app.flags.DEFINE_float('beta', 0, 'Weight for timestep in beamsearch score')
 
 

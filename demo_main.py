@@ -79,8 +79,8 @@ def train_with_eval(FLAGS):
                 logging.info("restore model {} for {}".format(step,bestDevModel))
                 train_model.load_specific_model(bestDevModel)
                 train_model.run_decay_lr()
-                train_model.save_model(checkpoint_basename)
-                bestDevModel = tf.train.get_checkpoint_state(FLAGS.log_root).model_checkpoint_path
+                #train_model.save_model(checkpoint_basename)
+                #bestDevModel = tf.train.get_checkpoint_state(FLAGS.log_root).model_checkpoint_path
                 bad_valid = 0
                 if lr<0.001:
                     logging.info("lr = {}, stop".format(lr))
@@ -242,7 +242,7 @@ def decode_Beam(FLAGS):
     decoder.decode()
 
 
-def decode_my(FLAGS):
+def decode_my_one(FLAGS):
     vocab_in, vocab_out = data.load_dict_data(FLAGS)
     batcher = Batcher(FLAGS.data_path, vocab_in, vocab_out, FLAGS, data_file=FLAGS.test_name)
     import eval
@@ -251,7 +251,12 @@ def decode_my(FLAGS):
     FLAGS_decode = config.generate_nametuple(FLAGS_decode)
     model = SummarizationModel(FLAGS_decode, vocab_in, vocab_out, batcher)
     decoder = eval.EvalDecoder(model, batcher, vocab_out)
-    decoder.decode()
+
+    while True:
+        question = input()
+        batch = batcher.batch_one_data(question)
+        result = decoder.decode_one_question(batch)
+        print(result[2])
 
 
 def main(unused_argv):
@@ -267,7 +272,7 @@ def main(unused_argv):
     elif FLAGS.mode == 'eval':
         pass
     elif FLAGS.mode == 'decode':
-        decode_my(FLAGS)
+        decode_my_one(FLAGS)
     else:
         raise ValueError("The 'mode' flag must be one of train/eval/decode")
 

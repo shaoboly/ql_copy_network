@@ -251,6 +251,15 @@ class Batcher:
         batch = Batch(example_list,self._config,self._vocab_in,self._vocab_out)
         return batch
 
+    def batch_one_data(self,raw_txt,pos=None):
+        article, abstract = raw_txt.strip(),"kong"
+        example = Example(article, [abstract], pos, self._vocab_in, self._vocab_out, self._config)
+        tiles_example = []
+        for i in range(self._config.batch_size):
+            tiles_example.append(example)
+        batch = Batch(tiles_example, self._config, self._vocab_in, self._vocab_out)
+        return batch
+
     def next_single_decode_batch(self):
         if self.c_index>= self._length:
             self.c_epoch+=1
@@ -264,16 +273,20 @@ class Batcher:
 
         example_list = []
         for i,instance in enumerate(batch_now):
+            pos=None
             article,abstract = instance.strip().split("\t")[:2]
+            if self._config.use_pos_tag:
+                pos = instance.strip().split("\t")[2]
+
             abstract=abstract.replace(data.SENTENCE_START,"").replace(data.SENTENCE_END,"")
-            example = Example(article, [abstract], self._vocab, self._config)
+            example = Example(article, [abstract],pos, self._vocab_in,self._vocab_out, self._config)
             example_list.append(example)
 
         tiles_example = []
         for i in range(self._config.batch_size):
             tiles_example.append(example_list[0])
 
-        batch = Batch(tiles_example,self._config,self._vocab)
+        batch = Batch(tiles_example, self._config, self._vocab_in, self._vocab_out)
         return batch
 
     def reset(self):
