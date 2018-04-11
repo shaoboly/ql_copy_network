@@ -1,11 +1,11 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s"
+datadir= r"D:\data\seq2seq\complexwebquestions\add_ES_EE"
 
-train_f = open(datadir+r"\train.txt_tag",encoding="utf-8").readlines()
-valid_f = open(datadir+r"\train.txt_tag",encoding="utf-8").readlines()
-test_f = open(datadir+r"\train.txt_tag",encoding="utf-8").readlines()
+train_f = open(datadir+r"\complex.train.fresh",encoding="utf-8").readlines()
+valid_f = open(datadir+r"\complex.dev.fresh",encoding="utf-8").readlines()
+test_f = open(datadir+r"\complex.test.fresh",encoding="utf-8").readlines()
 
 train_out_f = open("train.txt","w",encoding="utf-8")
 valid_out_f = open("validation.txt","w",encoding="utf-8")
@@ -17,7 +17,8 @@ def generate_vocab(train_f,word_size):
 
     predict = {}
     for line in train_f:
-        line = str(line).strip().lower().split('\t')
+        #line = str(line).strip().lower().split('\t')
+        line = str(line).strip().split('\t')
         line = line[0].split()+line[1].split()
 
         for w in line:
@@ -45,8 +46,8 @@ def generate_predicate_vocab(train_f,word_size):
     counter = collections.Counter()
     predict = {}
     for line in train_f:
-        line = str(line).strip().lower().split('\t')
-
+        #line = str(line).strip().lower().split('\t')
+        line = str(line).strip().split('\t')
         predicate = line[1].split()
 
         line = line[0].split()
@@ -78,7 +79,8 @@ def generate_target_vocab(train_f,word_size):
     counter = collections.Counter()
     predict = {}
     for line in train_f:
-        line = str(line).strip().lower().split('\t')
+        #line = str(line).strip().lower().split('\t')
+        line = str(line).strip().split('\t')
         line = line[1].split()
 
         for w in line:
@@ -104,7 +106,8 @@ def generate_target_vocab_pre_only(train_f,word_size):
     counter = collections.Counter()
     predict = {}
     for line in train_f:
-        line = str(line).strip().lower().split('\t')
+        #line = str(line).strip().lower().split('\t')
+        line = str(line).strip().split('\t')
         line = line[1].split()
 
         for w in line:
@@ -131,7 +134,8 @@ def generate_source_vocab(train_f,word_size):
     counter = collections.Counter()
     predict = {}
     for line in train_f:
-        line = str(line).strip().lower().split('\t')
+        #line = str(line).strip().lower().split('\t')
+        line = str(line).strip().split('\t')
         line = line[0].split()
 
         for w in line:
@@ -153,7 +157,8 @@ def generate_training_file(train_f,train_out_f):
     random.shuffle(train_f)
 
     for line in train_f:
-        line =  str(line).strip().lower().split("\t")
+        #line =  str(line).strip().lower().split("\t")
+        line = str(line).strip().split("\t")
         line[1] = ' '.join(line[1].strip().split())
         train_out_f.write("{}\t{}\n".format(line[0],line[1]))
 
@@ -188,7 +193,7 @@ def generate_fresh_data(train_f,train_out_f):
 
         l = ' '.join(l_words)
         train_out_f.write("{}\t{}\n".format(q, l))
-'''
+
 generate_training_file(train_f,train_out_f)
 generate_training_file(valid_f,valid_out_f)
 generate_training_file(test_f,test_out_f)
@@ -198,6 +203,6 @@ generate_vocab(train_f,50000)
 generate_target_vocab(train_f,10000)
 generate_source_vocab(train_f,10000)
 
-'''
-generate_predicate_vocab(train_f,10000)
+
+#generate_predicate_vocab(train_f,10000)
 #generate_predicate_vocab(train_f,50000)

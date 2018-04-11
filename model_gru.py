@@ -311,10 +311,26 @@ class SummarizationModel(object):
         subwords_embedding = self._vocab_out.compute_predicate_indices(self._vocab_in)
         attention_subwords = tf.constant(subwords_embedding, dtype=tf.int32)
         attention_embedding = tf.nn.embedding_lookup(self.embedding_in, attention_subwords)
-        
 
-        reduce_attention_embedding = tf.reduce_mean(attention_embedding,axis=1)
-        return reduce_attention_embedding
+        attention_embedding_size = attention_embedding.get_shape()[-1].value
+        tile_embedding_out = tf.expand_dims(self.embedding_out,axis=1)
+        attention_embedding = tf.concat([attention_embedding,tile_embedding_out],axis=1)
+
+        attention_embedding_size_in =  attention_embedding.get_shape()[-1].value
+
+        with tf.variable_scope("attention_cnn"):
+            w = tf.get_variable("W_h", [1, 1, attention_embedding_size_in, attention_embedding_size])
+            b = tf.get_variable("b", [attention_embedding_size])
+            attention_embedding = tf.expand_dims(attention_embedding,axis=1)
+            attention_embedding_out = tf.nn.conv2d(attention_embedding, w, strides=[1, 1, 1, 1], padding='VALID')+b
+            attention_embedding_out = tf.nn.max_pool(attention_embedding_out, ksize=[1, 1, 4, 1], strides=[1, 1, 1, 1], padding='VALID')
+
+            attention_embedding_out = tf.squeeze(attention_embedding_out)
+
+        if False:
+            reduce_attention_embedding = tf.reduce_mean(attention_embedding,axis=1)
+            return reduce_attention_embedding
+        return attention_embedding_out
 
     def _add_seq2seq(self):
         """Add the whole sequence-to-sequence model to the graph."""

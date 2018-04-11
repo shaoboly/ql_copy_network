@@ -29,7 +29,7 @@ tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
 tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use_grammer_dict")
 tf.app.flags.DEFINE_boolean('use_pos_tag', False,"use_pos_tag")
-tf.app.flags.DEFINE_boolean('match_attention', False,"match_attention")
+tf.app.flags.DEFINE_boolean('match_attention', True,"match_attention")
 tf.app.flags.DEFINE_boolean('cor_embedding', False,"match_attention")
 tf.app.flags.DEFINE_string('cor_embedding_dir', r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\vector.tsv", 'glove dir')
 
