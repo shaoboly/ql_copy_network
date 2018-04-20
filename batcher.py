@@ -27,10 +27,12 @@ class Example:
             assert len(pos_words)==len(article_words)
             self.enc_pos = [vocab_in.tag2id[w] for w in pos_words]
 
+
         # Process the abstract
         abstract = ' '.join(abstract_sentences)  # string
         abstract_words = abstract.split()  # list of strings
         abs_ids = [vocab_out.word2id(w) for w in abstract_words]  # list of word ids; OOVs are represented by the id for UNK token
+
 
 
         # Get the decoder input sequence and target sequence
@@ -100,7 +102,7 @@ class Example:
 class Batch(object):
     """Class representing a minibatch of train/val/test examples for text summarization."""
 
-    def __init__(self, example_list, hps, vocab,vocab_out):
+    def __init__(self, example_list, hps, vocab,vocab_out,real_length =None):
         """Turns the example_list into a Batch object.
 
         Args:
@@ -108,11 +110,14 @@ class Batch(object):
              hps: hyperparameters
              vocab: Vocabulary object
         """
+        self.hps = hps
         self.pad_id = vocab.word2id(data.PAD_TOKEN) # id of the PAD token used to pad sequences
         self.vocab = vocab
+        self.vocab_out = vocab_out
         self.init_encoder_seq(example_list, hps) # initialize the input to the encoder
         self.init_decoder_seq(example_list, hps) # initialize the input and targets for the decoder
         self.store_orig_strings(example_list) # store the original strings
+        self.real_length =real_length
 
     def init_encoder_seq(self, example_list, hps):
         """Initializes the following:
@@ -158,6 +163,12 @@ class Batch(object):
             if hps.use_pos_tag:
                 self.enc_pos[i, :] = ex.enc_pos[:]
 
+        if hps.position_embedding:
+            self.en_position = np.zeros((hps.batch_size, max_enc_seq_len), dtype=np.int32)
+            for i, ex in enumerate(example_list):
+                position_ex = np.arange(0,max_enc_seq_len,1)
+                self.en_position[i,:] = position_ex[:]
+
         # For pointer-generator mode, need to store some extra info
         if hps.pointer_gen:
             # Determine the max number of in-article OOVs in this batch
@@ -171,10 +182,17 @@ class Batch(object):
 
 
     def init_deocde_point_label(self,vocab_out):
-        self.pgen_label = []
-        grammar_indices = vocab_out.get_special_vocab_indexes("")
+        self.pgen_label = np.zeros_like(self.target_batch,dtype=np.int32)
+        grammar_indices = vocab_out.get_special_vocab_indexes(os.path.join(self.hps.data_path, "grammer"))
         for i, target_out in enumerate(self.target_batch):
-            pass
+            for j,item in enumerate(target_out):
+                if item in grammar_indices:
+                    pass
+                else:
+                    if item >=vocab_out.size():
+                        self.pgen_label[i][j]= 2
+                    else:
+                        self.pgen_label[i][j] = 1
 
     def init_decoder_seq(self, example_list, hps):
         """Initializes the following:
@@ -201,6 +219,10 @@ class Batch(object):
             self.target_batch[i, :] = ex.target[:]
             for j in range(ex.dec_len):
                 self.dec_padding_mask[i][j] = 1
+
+        if hps.use_grammer_dict and hps.dict_loss:
+            self.init_deocde_point_label(vocab_out=self.vocab)
+
 
     def store_orig_strings(self, example_list):
         """Store the original article and abstract strings in the Batch object"""
@@ -248,7 +270,11 @@ class Batcher:
             example = Example(article, [abstract],pos, self._vocab_in,self._vocab_out, self._config)
             example_list.append(example)
 
-        batch = Batch(example_list,self._config,self._vocab_in,self._vocab_out)
+        real_length = len(example_list)
+        while len(example_list)<self._config.batch_size:
+            example_list+=random.sample(example_list,1)
+
+        batch = Batch(example_list,self._config,self._vocab_in,self._vocab_out,real_length=real_length)
         return batch
 
     def batch_one_data(self,raw_txt,pos=None):

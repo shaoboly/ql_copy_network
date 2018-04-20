@@ -178,7 +178,7 @@ def attention_decoder(decoder_inputs, initial_state, encoder_states, enc_padding
             if pointer_gen:
                 if FLAGS.use_grammer_dict:
                     with tf.variable_scope('calculate_pgen'):
-                        p_gen = linear([context_vector,state, x], 3, True) # a scalar
+                        p_gen = linear([context_vector,state, x], 3, True) # a vector
                         p_gen = tf.nn.softmax(p_gen)
                         p_gens.append(p_gen)
                 else:

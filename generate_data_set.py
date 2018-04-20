@@ -1,16 +1,19 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\complexwebquestions\add_ES_EE"
+datadir= r"D:\data\seq2seq\lcquad\detect_lower_split"
 
-train_f = open(datadir+r"\complex.train.fresh",encoding="utf-8").readlines()
-valid_f = open(datadir+r"\complex.dev.fresh",encoding="utf-8").readlines()
-test_f = open(datadir+r"\complex.test.fresh",encoding="utf-8").readlines()
+train_f = open(datadir+r"\lc.entity_detect.train",encoding="utf-8").readlines()
+valid_f = open(datadir+r"\lc.entity_detect.test",encoding="utf-8").readlines()
+test_f = open(datadir+r"\lc.entity_detect.test",encoding="utf-8").readlines()
 
 train_out_f = open("train.txt","w",encoding="utf-8")
 valid_out_f = open("validation.txt","w",encoding="utf-8")
 test_out_f = open("input.txt","w",encoding="utf-8")
 
+source_min =10
+target_min = 1
+vocat_fenge = "\t"
 import re
 def generate_vocab(train_f,word_size):
     counter = collections.Counter()
@@ -37,7 +40,7 @@ def generate_vocab(train_f,word_size):
         if w[0] in predict:
             vocab.write("{} {}\n".format(w[0],w[1]))
         else:
-            if w[1]>=4:
+            if w[1]>=source_min:
                 vocab.write("{} {}\n".format(w[0], w[1]))
     vocab.close()
 
@@ -62,15 +65,15 @@ def generate_predicate_vocab(train_f,word_size):
                 w =w.split(':')[1]
                 w_all = w.split('.')
                 for tmp in w_all:
-                    counter[tmp] += 4
+                    counter[tmp] += target_min
 
     counter = counter.most_common(word_size)
 
     vocab = open("vocab.in", "w", encoding="utf-8")
 
     for i, w in enumerate(counter):
-        if w[1] >= 4:
-            vocab.write("{} {}\n".format(w[0], w[1]))
+        if w[1] >= target_min:
+            vocab.write("{}{}{}\n".format(w[0],vocat_fenge, w[1]))
     vocab.close()
 
 
@@ -87,19 +90,21 @@ def generate_target_vocab(train_f,word_size):
             w = w.strip()
             counter[w] += 1
 
-            if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
+            #if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
+            if "http://dbpedia.org" in w:
                 predict[w] = 1
 
     counter = counter.most_common(word_size)
 
     vocab = open("vocab.out", "w", encoding="utf-8")
 
+    print(len(predict))
     for i, w in enumerate(counter):
         if w[0] in predict:
-            vocab.write("{} {}\n".format(w[0], w[1]))
+            vocab.write("{}{}{}\n".format(w[0], vocat_fenge, w[1]))
         else:
-            if w[1] >= 10:
-                vocab.write("{} {}\n".format(w[0], w[1]))
+            if w[1] >= target_min:
+                vocab.write("{}{}{}\n".format(w[0], vocat_fenge, w[1]))
     vocab.close()
 
 def generate_target_vocab_pre_only(train_f,word_size):
@@ -123,11 +128,11 @@ def generate_target_vocab_pre_only(train_f,word_size):
     vocab = open("vocab.out", "w", encoding="utf-8")
 
     for i, w in enumerate(counter):
-        if w[1] >= 10:
-            vocab.write("{} {}\n".format(w[0], w[1]))
+        if w[1] >= target_min:
+            vocab.write("{}{}{}\n".format(w[0], vocat_fenge, w[1]))
 
     for w in predict:
-        vocab.write("{} {}\n".format(w, 1))
+        vocab.write("{}{}{}\n".format(w[0], vocat_fenge, w[1]))
     vocab.close()
 
 def generate_source_vocab(train_f,word_size):
@@ -148,8 +153,8 @@ def generate_source_vocab(train_f,word_size):
     vocab = open("vocab.in", "w", encoding="utf-8")
 
     for i, w in enumerate(counter):
-        if w[1] >= 4:
-            vocab.write("{} {}\n".format(w[0], w[1]))
+        if w[1] >= source_min:
+            vocab.write("{}{}{}\n".format(w[0], vocat_fenge, w[1]))
     vocab.close()
 
 

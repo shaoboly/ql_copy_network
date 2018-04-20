@@ -72,7 +72,7 @@ def train_with_eval(FLAGS):
             if FLAGS.badvalid==0:
                 continue
             bad_valid += 1
-            logging.info("bad valid {} compared with bestDevModel {} bleu {} acc {}".format(bad_valid,bestDevModel,best_bleu,acc))
+            logging.info("bad valid {} compared with bestDevModel {} bleu {} acc {}".format(bad_valid,bestDevModel,best_bleu,best_acc))
             lr = train_model.get_specific_variable(train_model.learning_rate)
             logging.info("current learning rate {}".format(lr))
             if bad_valid>=FLAGS.badvalid:
@@ -118,6 +118,9 @@ def validation_acc(dev_model,FLAGS):
 
 
             for i,instance in enumerate(ids):
+                if i>=valid_batch.real_length:
+                    print("eval done with {} isntances".format(len(output_result)))
+                    break
                 if i==len(valid_batch.art_oovs):
                     break
                 out_words = data.outputids2words(instance, dev_model._vocab_out, valid_batch.art_oovs[i])
@@ -168,7 +171,7 @@ def train_one_epoch(train_model, dev_model, FLAGS):
             logging.info("Finish {} epoch, lr {}".format(train_model.batcher.c_epoch,lr))
             return loss
 
-        if len(batch.art_oovs)<len(batch.enc_batch):
+        if batch.real_length!=FLAGS.batch_size or len(batch.art_oovs)<len(batch.enc_batch):
             continue
         results = train_model.run_train_step(batch)
 
@@ -265,7 +268,7 @@ def main(unused_argv):
         train_with_eval(FLAGS)
 
     elif FLAGS.mode == 'eval':
-        pass
+        decode_Beam(FLAGS)
     elif FLAGS.mode == 'decode':
         decode_my(FLAGS)
     else:

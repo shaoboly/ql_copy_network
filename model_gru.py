@@ -97,9 +97,15 @@ class SummarizationModel(object):
         self._enc_batch = tf.placeholder(tf.int32, [hps.batch_size, None], name='enc_batch')
         self._enc_lens = tf.placeholder(tf.int32, [hps.batch_size], name='enc_lens')
         self._enc_padding_mask = tf.placeholder(tf.float32, [hps.batch_size, None], name='enc_padding_mask')
-        if FLAGS.pointer_gen:
+        if self._hps.pointer_gen:
             self._enc_batch_extend_vocab = tf.placeholder(tf.int32, [hps.batch_size, None], name='enc_batch_extend_vocab')
             self._max_art_oovs = tf.placeholder(tf.int32, [], name='max_art_oovs')
+
+        if self._hps.position_embedding:
+            self._en_position = tf.placeholder(tf.int32, [hps.batch_size, None], name='enc_position')
+
+        if self._hps.use_grammer_dict and self._hps.dict_loss:
+            self._type_target = tf.placeholder(tf.int32, [hps.batch_size, None], name='type_target')
 
         # decoder part
         self._dec_batch = tf.placeholder(tf.int32, [hps.batch_size, hps.max_dec_steps], name='dec_batch')
@@ -134,6 +140,12 @@ class SummarizationModel(object):
             feed_dict[self._dec_batch] = batch.dec_batch
             feed_dict[self._target_batch] = batch.target_batch
             feed_dict[self._dec_padding_mask] = batch.dec_padding_mask
+
+        if self._hps.position_embedding:
+            feed_dict[self._en_position] = batch.en_position
+
+        if self._hps.use_grammer_dict and self._hps.dict_loss:
+            feed_dict[self._type_target] = batch.pgen_label
         return feed_dict
 
     def _add_encoder(self, encoder_inputs, seq_len):
@@ -215,8 +227,8 @@ class SummarizationModel(object):
         cell = copy.deepcopy(self.cell_build)
 
         if self._hps.match_attention:
-            new_match_embedding = self.find_predicate_attention()
-            #new_match_embedding = self.embedding_out
+            #new_match_embedding = self.find_predicate_attention()
+            new_match_embedding = self.embedding_out
 
         else:
             new_match_embedding = None
@@ -245,7 +257,7 @@ class SummarizationModel(object):
                                                                                  prev_coverage=prev_coverage,
                                                                                  embedding=new_match_embedding)
 
-        self.p_grammers = p_grammers
+        self.p_grammers = p_gens
         self.match_probs = match_probs
         return outputs, out_state, attn_dists, p_gens, coverage
 
@@ -264,6 +276,7 @@ class SummarizationModel(object):
                 new_vocab_with_grammer = []
                 new_attention_dist = []
                 for i,dist in enumerate(vocab_dists):
+
                     p_gram = self.p_gens[i]
                     p_first = tf.slice(p_gram,[0,0],[self._hps.batch_size,1])
                     p_second = tf.slice(p_gram, [0, 1], [self._hps.batch_size, 1])
@@ -368,8 +381,10 @@ class SummarizationModel(object):
                     pos_embedding = tf.get_variable('pos_tag', [self._vocab_in.pos_len, hps.pos_tag_dim], dtype=tf.float32, initializer=self.trunc_norm_init)
                     enc_pos_embedding = tf.nn.embedding_lookup(pos_embedding, self._enc_pos)
                     emb_enc_inputs = tf.concat(axis=-1, values=[emb_enc_inputs, enc_pos_embedding])
-
-
+                if hps.position_embedding:
+                    position_embedding = tf.get_variable('position', [hps.max_enc_steps, 50], dtype=tf.float32, initializer=self.trunc_norm_init)
+                    position_feature = tf.nn.embedding_lookup(position_embedding,self._en_position)
+                    emb_enc_inputs = tf.concat(axis=-1, values=[emb_enc_inputs, position_feature])
 
             self.embedding_in = embedding_in
             self.embedding_out = embedding_out
@@ -428,14 +443,24 @@ class SummarizationModel(object):
                         # This is fiddly; we use tf.gather_nd to pick out the probabilities of the gold target words
                         loss_per_step = [] # will be list length max_dec_steps containing shape (batch_size)
                         batch_nums = tf.range(0, limit=hps.batch_size) # shape (batch_size)
+                        type_batch_number = tf.range(0, limit=hps.batch_size)
                         for dec_step, dist in enumerate(final_dists):
                             targets = self._target_batch[:,dec_step] # The indices of the target words. shape (batch_size)
                             indices = tf.stack( (batch_nums, targets), axis=1) # shape (batch_size, 2)
                             gold_probs = tf.gather_nd(dist, indices) # shape (batch_size). prob of correct words on this step
-
                             gold_probs = tf.clip_by_value(gold_probs,1e-20,10.0)
-                            losses = -tf.log(gold_probs)
+                            losses = -(1-gold_probs)*(1-gold_probs)*tf.log(gold_probs)
+                            if self._hps.use_grammer_dict and self._hps.dict_loss:
+                                p_gram = self.p_gens[dec_step]
+                                types = self._type_target[:, dec_step]
+                                indices_types = tf.stack((type_batch_number, types), axis=1)
+                                type_probs = tf.gather_nd(p_gram, indices_types)
+                                type_probs = tf.clip_by_value(type_probs, 1e-20, 10.0)
+                                type_loss = -tf.log(type_probs)
+                                losses +=0.01 * type_loss
+
                             loss_per_step.append(losses)
+
 
                         # Apply dec_padding_mask and get loss
                         self._loss = _mask_and_avg(loss_per_step, self._dec_padding_mask)

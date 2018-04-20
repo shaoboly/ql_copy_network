@@ -25,14 +25,17 @@ tf.app.flags.DEFINE_boolean('single_pass', False, 'For decode mode only. If True
 tf.app.flags.DEFINE_string('cell_name', 'gru', 'must be one of lstm/gru')
 
 tf.app.flags.DEFINE_boolean('shared_vocab', False, "if True, vocab.out = vocab.in")
-tf.app.flags.DEFINE_boolean('use_glove', True,"use pretrain word2vec")
+tf.app.flags.DEFINE_boolean('use_glove', False,"use pretrain word2vec")
 tf.app.flags.DEFINE_string('glove_dir', r"D:\data\glove.6B\glove.6B.300d.txt", 'glove dir')
 tf.app.flags.DEFINE_boolean('use_grammer_dict', True,"use_grammer_dict")
+tf.app.flags.DEFINE_boolean('dict_loss', True, 'dict_loss of use_grammer_dict')
+
 tf.app.flags.DEFINE_boolean('use_pos_tag', False,"use_pos_tag")
-tf.app.flags.DEFINE_boolean('match_attention', True,"match_attention")
+tf.app.flags.DEFINE_boolean('match_attention', False,"match_attention")
 tf.app.flags.DEFINE_boolean('cor_embedding', False,"match_attention")
 tf.app.flags.DEFINE_string('cor_embedding_dir', r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\vector.tsv", 'glove dir')
 
+tf.app.flags.DEFINE_boolean('position_embedding', False,"match_attention")
 
 # Where to save output
 tf.app.flags.DEFINE_string('log_root', 'train_model', 'Root directory for all logging.')
@@ -50,6 +53,7 @@ tf.app.flags.DEFINE_integer('vocab_size', 50000, 'Size of vocabulary. These will
 tf.app.flags.DEFINE_float('lr', 0.15, 'learning rate')
 tf.app.flags.DEFINE_float('learning_rate_decay_factor', 0.5, 'learning rate')
 tf.app.flags.DEFINE_integer('pos_tag_dim', 50, 'dimension of word embeddings')
+
 
 
 tf.app.flags.DEFINE_integer('badvalid', 10, 'badvalid.')

@@ -23,7 +23,7 @@ class Vocab(object):
         self._word_to_id = {}
         self._id_to_word = {}
         self._count = 0 # keeps track of total number of words in the Vocab
-
+        self.grammar_id =None
         # [UNK], [PAD], [START] and [STOP] get the ids 0,1,2,3.
         for w in [UNKNOWN_TOKEN, PAD_TOKEN, START_DECODING, STOP_DECODING]:
             self._word_to_id[w] = self._count
@@ -33,7 +33,11 @@ class Vocab(object):
         # Read the vocab file and add words up to max_size
         with open(vocab_file, 'r',encoding="utf-8") as vocab_f:
             for line in vocab_f:
-                pieces = line.split()
+                if '\t' in line:
+                    pieces = line.split('\t')
+                else:
+                    pieces = line.split()
+
                 if len(pieces) != 2:
                     print('Warning: incorrectly formatted line in vocabulary file: %s\n' % line)
                     continue
@@ -70,20 +74,21 @@ class Vocab(object):
     def load_special_vocab_indexes(self,sp_dir):
         lines = open(sp_dir,encoding="utf-8")
         result = np.zeros((self.size()),dtype = np.float32)
-        self.grammar_id = []
         for line in lines:
             word = line.strip()
             idx = self.word2id(word)
-            self.grammar_id.append(idx)
             result[idx] = 1
         return result
     def get_special_vocab_indexes(self,sp_dir):
+        if self.grammar_id!=None:
+            return self.grammar_id
         lines = open(sp_dir,encoding="utf-8")
         grammar_id = []
         for line in lines:
             word = line.strip()
             idx = self.word2id(word)
             grammar_id.append(idx)
+        self.grammar_id = grammar_id
         return grammar_id
 
 
