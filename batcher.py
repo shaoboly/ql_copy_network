@@ -187,12 +187,12 @@ class Batch(object):
         for i, target_out in enumerate(self.target_batch):
             for j,item in enumerate(target_out):
                 if item in grammar_indices:
-                    pass
+                    self.pgen_label[i][j] = 0
                 else:
-                    if item >=vocab_out.size():
-                        self.pgen_label[i][j]= 2
+                    if vocab_out.is_predicate(item):
+                        self.pgen_label[i][j]= 1
                     else:
-                        self.pgen_label[i][j] = 1
+                        self.pgen_label[i][j] = 2
 
     def init_decoder_seq(self, example_list, hps):
         """Initializes the following:
@@ -221,7 +221,7 @@ class Batch(object):
                 self.dec_padding_mask[i][j] = 1
 
         if hps.use_grammer_dict and hps.dict_loss:
-            self.init_deocde_point_label(vocab_out=self.vocab)
+            self.init_deocde_point_label(vocab_out=self.vocab_out)
 
 
     def store_orig_strings(self, example_list):

@@ -1,5 +1,6 @@
 import numpy as np
 import logging,os
+import re
 # <s> and </s> are used in the data files to segment the abstracts into sentences. They don't receive vocab ids.
 SENTENCE_START = '<s>'
 SENTENCE_END = '</s>'
@@ -120,8 +121,17 @@ class Vocab(object):
         self.pos_pad_id = self.tag2id["O"]
 
 
+    def is_predicate(self,index):
+        if index in self._id_to_word:
+            w = self.id2word(index)
+        else:
+            return False
+        if re.match("(r-mso|mso):.*?\..*?\.(.)+", w):
+            return True
+        else:
+            return False
+
     def compute_predicate_indices(self,embedding_dict):
-        import re
         all_predicate_indexes = []
         for i in range(self._count):
             w = self.id2word(i)

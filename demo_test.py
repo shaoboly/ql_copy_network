@@ -9,7 +9,10 @@ FLAGS = config.FLAGS
 vocab_path = os.path.join(FLAGS.data_path, "vocab.in")
 vocab = Vocab(vocab_path, FLAGS.vocab_size)
 
-batcher_train = Batcher(FLAGS.data_path, vocab,vocab, FLAGS, data_file='train.txt')
+vocab_path = os.path.join(FLAGS.data_path, "vocab.out")
+vocab_out = Vocab(vocab_path, FLAGS.vocab_size)
+
+batcher_train = Batcher(FLAGS.data_path, vocab,vocab_out, FLAGS, data_file='train.txt')
 epoch = 0
 while True:
     print(epoch)

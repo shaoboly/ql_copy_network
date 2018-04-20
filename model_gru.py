@@ -449,7 +449,8 @@ class SummarizationModel(object):
                             indices = tf.stack( (batch_nums, targets), axis=1) # shape (batch_size, 2)
                             gold_probs = tf.gather_nd(dist, indices) # shape (batch_size). prob of correct words on this step
                             gold_probs = tf.clip_by_value(gold_probs,1e-20,10.0)
-                            losses = -(1-gold_probs)*(1-gold_probs)*tf.log(gold_probs)
+                            #losses = -(1 - gold_probs) * (1 - gold_probs) * tf.log(gold_probs)
+                            losses = -tf.log(gold_probs)
                             if self._hps.use_grammer_dict and self._hps.dict_loss:
                                 p_gram = self.p_gens[dec_step]
                                 types = self._type_target[:, dec_step]
