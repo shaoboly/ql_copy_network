@@ -223,12 +223,13 @@ def decode_Beam(FLAGS):
     # If in decode mode, set batch_size = beam_size
     # Reason: in decode mode, we decode one example at a time.
     # On each step, we have beam_size-many hypotheses in the beam, so we need to make a batch of these hypotheses.
-    if FLAGS.mode == 'decode':
-        FLAGS.batch_size = FLAGS.beam_size
+    #if FLAGS.mode == 'decode':
+    #    FLAGS.batch_size = FLAGS.beam_size
 
     # If single_pass=True, check we're in decode mode
-    if FLAGS.single_pass and FLAGS.mode != 'decode':
-        raise Exception("The single_pass flag should only be True in decode mode")
+    #if FLAGS.single_pass and FLAGS.mode != 'decode':
+    #    raise Exception("The single_pass flag should only be True in decode mode")
+
 
     vocab_in, vocab_out = data.load_dict_data(FLAGS)
 
@@ -236,6 +237,7 @@ def decode_Beam(FLAGS):
 
     FLAGS_decode = FLAGS_batcher._asdict()
     FLAGS_decode["max_dec_steps"] = 1
+    FLAGS_decode["mode"] = "decode"
     FLAGS_decode = config.generate_nametuple(FLAGS_decode)
     # The model is configured with max_dec_steps=1 because we only ever run one step of the decoder at a time (to do beam search). Note that the batcher is initialized with max_dec_steps equal to e.g. 100 because the batches need to contain the full summaries
     batcher = Batcher(FLAGS.data_path, vocab_in,vocab_out, FLAGS_batcher,  data_file=FLAGS.test_name)

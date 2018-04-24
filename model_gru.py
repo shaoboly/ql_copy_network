@@ -321,7 +321,8 @@ class SummarizationModel(object):
             return final_dists
 
     def find_predicate_attention(self):
-        subwords_embedding = self._vocab_out.compute_predicate_indices(self._vocab_in)
+        #subwords_embedding = self._vocab_out.compute_predicate_indices(self._vocab_in)
+        subwords_embedding = self._vocab_out.compute_predicate_indices_split(self._vocab_in)
         attention_subwords = tf.constant(subwords_embedding, dtype=tf.int32)
         attention_embedding = tf.nn.embedding_lookup(self.embedding_in, attention_subwords)
 

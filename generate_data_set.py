@@ -158,6 +158,27 @@ def generate_source_vocab(train_f,word_size):
     vocab.close()
 
 
+def append_target_subwords():
+    vocab = open("vocab.in", encoding="utf-8")
+    word2count = {}
+    for line in vocab:
+        word,cnt = line.strip().split()
+        word2count[word] = cnt
+    vocab = open("vocab.in_new", "w", encoding="utf-8")
+    vocab_out = open("vocab.out", encoding="utf-8")
+
+    for line in vocab_out:
+        w,cnt = line.strip().split()
+        if re.match("(r-mso|mso):.*?\..*?\.(.)+", w):
+            subwords = w.split('.')[-1].split('_')
+            for sub in subwords:
+                word2count[sub]=100
+
+    for key in word2count.keys():
+        vocab.write(key+'\t'+str(word2count[key])+'\n')
+
+#append_target_subwords()
+
 def generate_training_file(train_f,train_out_f):
     random.shuffle(train_f)
 
@@ -166,6 +187,8 @@ def generate_training_file(train_f,train_out_f):
         line = str(line).strip().split("\t")
         line[1] = ' '.join(line[1].strip().split())
         train_out_f.write("{}\t{}\n".format(line[0],line[1]))
+
+
 
 
 #generate_training_file(train_f,train_out_f)
@@ -199,6 +222,22 @@ def generate_fresh_data(train_f,train_out_f):
         l = ' '.join(l_words)
         train_out_f.write("{}\t{}\n".format(q, l))
 
+
+def reverse_seq2seq_data(name):
+
+    data = open(name,encoding="utf-8")
+    reverse_data = open(name+".rev","w", encoding="utf-8")
+
+    for line in data:
+        line = line.strip().split('\t')
+        reverse_data.write(line[1]+'\t'+line[0]+'\n')
+
+reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\input.txt")
+reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\validation.txt")
+reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\train.txt")
+
+
+'''
 generate_training_file(train_f,train_out_f)
 generate_training_file(valid_f,valid_out_f)
 generate_training_file(test_f,test_out_f)
@@ -210,4 +249,4 @@ generate_source_vocab(train_f,10000)
 
 
 #generate_predicate_vocab(train_f,10000)
-#generate_predicate_vocab(train_f,50000)
+#generate_predicate_vocab(train_f,50000)'''

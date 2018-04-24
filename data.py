@@ -150,6 +150,29 @@ class Vocab(object):
 
         return np.array(all_predicate_indexes)
 
+    def compute_predicate_indices_split(self,embedding_dict,max=3):
+        all_predicate_indexes = []
+        for i in range(self._count):
+            w = self.id2word(i)
+            if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
+                w = w.replace("r-mso:","")
+                w = w.replace("mso:", "")
+                subwords = w.split('.')[-1].split('_')
+                tmp = []
+                for i,sub in enumerate(subwords):
+                    if i>=max:
+                        break
+                    tmp.append(np.array(embedding_dict.word2id(sub)))
+                while len(tmp)<max:
+                    tmp.append(np.zeros_like(tmp[-1]))
+                all_predicate_indexes.append(np.array(tmp))
+            else:
+                c = embedding_dict.word2id(w)
+                tmp = [c for i in range(max)]
+                all_predicate_indexes.append(np.array(tmp))
+
+        return np.array(all_predicate_indexes)
+
 def load_dict_data(FLAGS):
 
     logging.info(FLAGS.vocab_path)
