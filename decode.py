@@ -106,7 +106,7 @@ class BeamSearchDecoder(object):
                 # rouge_log(results_dict, self._decode_dir)
                 outputfile.close()
                 return
-
+            print(self._batcher.c_index)
             original_article = batch.original_articles[0]  # string
             original_abstract = batch.original_abstracts[0]  # string
             original_abstract_sents = batch.original_abstracts_sents[0]  # list of strings
@@ -131,7 +131,8 @@ class BeamSearchDecoder(object):
                     decoded_words = decoded_words
                 decoded_output = ' '.join(decoded_words)  # single string
 
-                if FLAGS.single_pass:
+                #if FLAGS.single_pass:
+                if True:
                     # print(original_article+"\t"+decoded_output + "\n")
                     outputfile.write(original_article + "\t" + original_abstract + "\t" + decoded_output + "\t" + str(
                         best_hyp.avg_log_prob) + "\t" + str(best_hyp.len) + "\n")

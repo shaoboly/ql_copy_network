@@ -228,7 +228,8 @@ class SummarizationModel(object):
 
         if self._hps.match_attention:
             #new_match_embedding = self.find_predicate_attention()
-            new_match_embedding = self.embedding_out
+            #new_match_embedding = self.embedding_out
+            new_match_embedding = self.find_predicate_attention_gru()
 
         else:
             new_match_embedding = None
@@ -320,6 +321,62 @@ class SummarizationModel(object):
 
             return final_dists
 
+    def find_predicate_attention_gru_spo(self):
+        #subwords_embedding, mask_np = self._vocab_out.compute_predicate_indices_split_mask(self._vocab_in)
+        subwords_embedding,mask_np = self._vocab_out.compute_predicate_indices_mask(self._vocab_in)
+        attention_subwords = tf.constant(subwords_embedding, dtype=tf.int32)
+        attention_embedding = tf.nn.embedding_lookup(self.embedding_in, attention_subwords)
+
+        words_mask = tf.constant(mask_np, dtype=tf.int32)
+
+        attention_embedding_size = attention_embedding.get_shape()[-1].value
+        tile_embedding_out = tf.expand_dims(self.embedding_out, axis=1)
+        attention_embedding = tf.concat([tile_embedding_out, attention_embedding], axis=1)
+        attention_embedding_size_in = attention_embedding.get_shape()[-1].value
+
+        cell_fw = copy.deepcopy(self.cell_build)
+        cell_bw = copy.deepcopy(self.cell_build)
+        (encoder_outputs, (fw_st, bw_st)) = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, attention_embedding,
+                                                                            dtype=tf.float32, sequence_length=words_mask,
+                                                                            swap_memory=True)
+        #encoder_outputs = tf.concat(axis=2, values=encoder_outputs)  # concatenate the forwards and backwards states
+        encode_s = tf.concat([fw_st,bw_st],axis=1)
+        init_s = linear(encode_s, attention_embedding_size, True, scope="mode_predicate")
+
+        '''gramar_indices_ex = tf.expand_dims(self.grammer_indices_mask,axis=-1)
+        reverse_grammer = tf.expand_dims(self.reverse_grammer,axis=-1)
+        init_s = self.embedding_out*gramar_indices_ex + init_s*reverse_grammer'''
+
+        return init_s
+
+    def find_predicate_attention_gru(self):
+        subwords_embedding,words_mask = self._vocab_out.compute_predicate_indices_split_mask(self._vocab_in)
+        #subwords_embedding, words_mask = self._vocab_out.compute_lcquad_indices_mask(self._vocab_in)
+        attention_subwords = tf.constant(subwords_embedding, dtype=tf.int32)
+        attention_embedding = tf.nn.embedding_lookup(self.embedding_in, attention_subwords)
+
+        attention_embedding_size = attention_embedding.get_shape()[-1].value
+        tile_embedding_out = tf.expand_dims(self.embedding_out, axis=1)
+        attention_embedding = tf.concat([tile_embedding_out, attention_embedding], axis=1)
+        attention_embedding_size_in = attention_embedding.get_shape()[-1].value
+
+        cell_fw = copy.deepcopy(self.cell_build)
+        cell_bw = copy.deepcopy(self.cell_build)
+        (encoder_outputs, (fw_st, bw_st)) = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, attention_embedding,
+                                                                            dtype=tf.float32, sequence_length=words_mask,
+                                                                            swap_memory=True)
+        #encoder_outputs = tf.concat(axis=2, values=encoder_outputs)  # concatenate the forwards and backwards states
+        encode_s = tf.concat([fw_st,bw_st],axis=1)
+        init_s = linear(encode_s, attention_embedding_size, True, scope="mode_predicate")
+
+        if self._hps.use_grammer_dict:
+            gramar_indices_ex = tf.expand_dims(self.grammer_indices_mask,axis=-1)
+            reverse_grammer = tf.expand_dims(self.reverse_grammer,axis=-1)
+            init_s = self.embedding_out*gramar_indices_ex + init_s*reverse_grammer
+
+        return init_s
+
+
     def find_predicate_attention(self):
         #subwords_embedding = self._vocab_out.compute_predicate_indices(self._vocab_in)
         subwords_embedding = self._vocab_out.compute_predicate_indices_split(self._vocab_in)
@@ -328,7 +385,7 @@ class SummarizationModel(object):
 
         attention_embedding_size = attention_embedding.get_shape()[-1].value
         tile_embedding_out = tf.expand_dims(self.embedding_out,axis=1)
-        attention_embedding = tf.concat([attention_embedding,tile_embedding_out],axis=1)
+        attention_embedding = tf.concat([tile_embedding_out,attention_embedding],axis=1)
 
         attention_embedding_size_in =  attention_embedding.get_shape()[-1].value
 
@@ -341,10 +398,32 @@ class SummarizationModel(object):
 
             attention_embedding_out = tf.squeeze(attention_embedding_out)
 
+        gramar_indices_ex = tf.expand_dims(self.grammer_indices_mask,axis=-1)
+        reverse_grammer = tf.expand_dims(self.reverse_grammer,axis=-1)
+        attention_embedding_out = self.embedding_out*gramar_indices_ex + attention_embedding_out*reverse_grammer
+        #attention_embedding = tf.nn.dropout(attention_embedding_out,0.5)
         if False:
             reduce_attention_embedding = tf.reduce_mean(attention_embedding,axis=1)
             return reduce_attention_embedding
         return attention_embedding_out
+
+    def mask_softmax(self,vocab_score):
+        normal_vocab_dists = []
+        for dist in vocab_score:
+            dist = tf.exp(dist)
+            predicates = dist * self.reverse_grammer
+            sum_w = tf.reduce_sum(predicates, axis=-1, keep_dims=True)
+            #sum_w = tf.clip_by_value(sum_w, 1e-20, 10)
+            predicates = predicates / sum_w
+
+            grammars = dist * self.grammer_indices_mask
+            sum_w = tf.reduce_sum(grammars, axis=-1, keep_dims=True)
+            #sum_w = tf.clip_by_value(sum_w, 1e-20, 10)
+            grammars = grammars / sum_w
+
+            final_out = predicates + grammars
+            normal_vocab_dists.append(final_out)
+        return normal_vocab_dists
 
     def _add_seq2seq(self):
         """Add the whole sequence-to-sequence model to the graph."""
@@ -418,10 +497,29 @@ class SummarizationModel(object):
                     if self._hps.match_attention:
                         predicate_weights = self.match_probs[i]
                         #predicate_weights = self.match_probs[i] * self.reverse_grammer + self.grammer_indices_mask
+
                         tmp = tmp * predicate_weights
                     vocab_scores.append(tmp)
-
+                #vocab_dists = self.mask_softmax(vocab_scores)
                 vocab_dists = [tf.nn.softmax(s) for s in vocab_scores]  # The vocabulary distributions. List length max_dec_steps of (batch_size, vsize) arrays. The words are in the order they appear in the vocabulary file.
+
+                if self._hps.use_grammer_dict==True:
+                    normal_vocab_dists = []
+                    for i, output in enumerate(vocab_dists):
+                        predicates = output* self.reverse_grammer
+                        sum_w = tf.reduce_sum(predicates,axis=-1,keep_dims=True)
+                        sum_w = tf.clip_by_value(sum_w,1e-20,10)
+                        predicates = predicates/sum_w
+
+                        grammars = output*self.grammer_indices_mask
+                        sum_w = tf.reduce_sum(grammars,axis=-1,keep_dims=True)
+                        sum_w = tf.clip_by_value(sum_w, 1e-20, 10)
+                        grammars = grammars/sum_w
+
+                        final_out= predicates+grammars
+                        normal_vocab_dists.append(final_out)
+                    vocab_dists = normal_vocab_dists
+
 
             # For pointer-generator model, calc final distribution from copy distribution and vocabulary distribution
             if FLAGS.pointer_gen:
@@ -488,7 +586,7 @@ class SummarizationModel(object):
             if self._hps.beam_size>1:
                 topk_probs, self._topk_ids = tf.nn.top_k(final_dists, self._hps.beam_size*2) # take the k largest probs. note batch_size=beam_size in decode mode
             else:
-                topk_probs, self._topk_ids = tf.nn.top_k(final_dists,1)  # take the k largest probs. note batch_size=beam_size in decode mode
+                topk_probs, self._topk_ids = tf.nn.top_k(final_dists,10)  # take the k largest probs. note batch_size=beam_size in decode mode
             self._topk_log_probs = tf.log(topk_probs)
 
 
@@ -583,6 +681,8 @@ class SummarizationModel(object):
                 'loss': self._loss,
                 'global_step': self.global_step,
                 'final_ids': self.final_ids,
+                'gate_prob': self.p_gens
+
         }
         if self._hps.coverage:
             to_return['coverage_loss'] = self._coverage_loss

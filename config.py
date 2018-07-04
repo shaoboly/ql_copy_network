@@ -17,7 +17,7 @@ tf.app.flags.DEFINE_string('data_path', '', 'Path expression to tf.Example dataf
 tf.app.flags.DEFINE_string('vocab_path', '', 'Path expression to text vocabulary file.')
 tf.app.flags.DEFINE_string('train_name', 'train.txt', 'train file.')
 tf.app.flags.DEFINE_string('dev_name', 'input.txt', 'dev file.')
-tf.app.flags.DEFINE_string('test_name', 'input.txt', 'dev file.')
+tf.app.flags.DEFINE_string('test_name', 'cases.txt', 'dev file.')
 
 # Important settings
 tf.app.flags.DEFINE_string('mode', 'train', 'must be one of train/eval/decode')
@@ -92,7 +92,7 @@ def retype_FLAGS():
 
     hps_dict = {}
     for key, val in FLAGS.__flags.items():  # for each flag
-        hps_dict[key] = val.value  # add it to the dict
+        hps_dict[key] = val  # add it to the dict
     hps = namedtuple("HParams", hps_dict.keys())._make(hps_dict.values())
     return hps
 

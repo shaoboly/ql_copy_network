@@ -164,10 +164,21 @@ class EvalDecoder(object):
 
         return batch.original_articles[i], batch.original_abstracts[i], output_now
 
+    def get_condidate_predicate(self,case,candidates,art_oovs):
+        import re
+        predicate_regrex = "(r-mso|mso|dev|r-dev):.*?\.(.)+"
+        result = []
+        for i in range(len(case)):
+            if re.match(predicate_regrex, case[i]):
+                candidate_predicates_words = data.outputids2words(candidates[i], self._model._vocab_out, art_oovs)
+                result.append("|||".join(candidate_predicates_words))
+        return result
+
     def decode(self):
         """Decode examples until data is exhausted (if FLAGS.single_pass) and return, or decode indefinitely, loading latest checkpoint at regular intervals"""
         t0 = time.time()
         counter = 0
+
 
         f = os.path.join(FLAGS.log_root, "output.txt")
         # print("----------------"+f)
@@ -190,15 +201,23 @@ class EvalDecoder(object):
                                                    (batch.art_oovs[0] if FLAGS.pointer_gen else None))  # string
 
             # Run beam search to get best Hypothesis
-            result = self.eval_one_batch(self._sess, self._model, self._vocab, batch)
+            result,all_candidate = self.eval_one_batch_with_candidate(self._sess, self._model, self._vocab, batch)
+            #result = self.eval_one_batch(self._sess, self._model, self._vocab, batch)
 
 
             for i,instance in enumerate(result):
                 if i == len(batch.art_oovs):
                     break
+                if i>=batch.real_length:
+                    print("eval done with {} isntances".format(len(output_result)))
+                    break
                 out_words = data.outputids2words(instance, self._model._vocab_out, batch.art_oovs[i])
                 if data.STOP_DECODING in out_words:
                     out_words = out_words[:out_words.index(data.STOP_DECODING)]
+
+                candidates_value = self.get_condidate_predicate(out_words,all_candidate[i],batch.art_oovs[i])
+                candidates_value = "_||_".join(candidates_value)
+
                 output_now = " ".join(out_words)
                 output_result.append(output_now)
                     # refer = " ".join(refer)
@@ -206,7 +225,8 @@ class EvalDecoder(object):
                 refer = batch.original_abstracts[i].strip()
                 list_of_reference.append([refer])
 
-                outputfile.write(batch.original_articles[i] + '\t' + batch.original_abstracts[i] + '\t' + output_now + '\n')
+                outputfile.write(batch.original_articles[i] + '\t' + batch.original_abstracts[i] + '\t' + output_now +'\t'+candidates_value+ '\n')
+
 
         bleu = matrix.bleu_score(list_of_reference, output_result)
         acc = matrix.compute_acc(list_of_reference, output_result)
@@ -221,10 +241,48 @@ class EvalDecoder(object):
 
         results = []
         steps = 0
+        latest_tokens = [vocab_out.word2id(data.START_DECODING) for i in
+                         range(FLAGS.batch_size)]  # latest token produced by each hypothesis
+
+        pre_state = dec_in_state
+        prev_coverage = None
+
+        while steps < FLAGS.max_dec_steps:
+            latest_tokens = [t if t in range(vocab_out.size()) else vocab_out.word2id(data.UNKNOWN_TOKEN) for t in
+                             latest_tokens]
+            # Run one step of the decoder to get the new info
+            (topk_ids, topk_log_probs, new_states, attn_dists, p_gens, new_coverage) = model.decode_onestep(sess=sess,
+                                                                                                            batch=batch,
+                                                                                                            latest_tokens=latest_tokens,
+                                                                                                            enc_states=enc_states,
+                                                                                                            dec_init_states=pre_state,
+                                                                                                            prev_coverage=prev_coverage,
+                                                                                                            first=(
+                                                                                                            steps == 0))
+
+            topk_ids = np.reshape(topk_ids,[-1])
+            results.append(topk_ids)
+
+            pre_state = new_states
+            latest_tokens = topk_ids
+
+            steps += 1
+
+        results = np.array(results).T
+        return results
+    def eval_one_batch_with_candidate(self,sess, model, vocab_out, batch):
+        enc_states, dec_in_state = model.run_encoder_eval(sess, batch)
+
+        # Initialize beam_size-many hyptheses
+
+        results = []
+        steps = 0
         latest_tokens = [vocab_out.word2id(data.START_DECODING) for i in range(FLAGS.batch_size)]  # latest token produced by each hypothesis
 
         pre_state = dec_in_state
         prev_coverage = None
+
+        all_candidate = [[] for i in range(FLAGS.batch_size)]
 
         while steps < FLAGS.max_dec_steps:
             latest_tokens = [t if t in range(vocab_out.size()) else vocab_out.word2id(data.UNKNOWN_TOKEN) for t in latest_tokens]
@@ -237,7 +295,14 @@ class EvalDecoder(object):
                                                                                                             prev_coverage=prev_coverage,
                                                                                                             first=(steps == 0))
 
-            topk_ids = np.reshape(topk_ids,[-1])
+            all_ids = topk_ids
+            topk_ids = [topk_ids[i][0] for i in range(len(topk_ids))]
+
+            for i in range(len(all_ids)):
+                all_candidate[i].append(all_ids[i])
+
+
+            #topk_ids = np.reshape(topk_ids,[-1])
             results.append(topk_ids)
 
             pre_state = new_states
@@ -246,7 +311,7 @@ class EvalDecoder(object):
             steps+=1
 
         results = np.array(results).T
-        return results
+        return results,all_candidate
 
     def basic_beam_search(self,sess, model, vocab_out, batch,top_k):
         enc_states, dec_in_state = model.run_encoder(sess, batch)

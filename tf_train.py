@@ -49,7 +49,7 @@ def train_with_eval(FLAGS):
             break
 
         loss = train_one_epoch(train_model, dev_model, FLAGS)
-        if np.isnan(loss):
+        if np.isnan(loss) or loss<0:
             logging.info("loss is nan, restore")
             train_model.load_specific_model(bestDevModel)
             bleu = -1
@@ -102,6 +102,22 @@ def validation_acc(dev_model,FLAGS):
     step = dev_model.get_specific_variable(dev_model.global_step)
     out_f = open(r"train_model/{}.test".format(step),"w",encoding='utf-8')
 
+    #gate_f = open(os.path.join(FLAGS.log_root, "gate.txt"), 'w', encoding="utf-8")
+    def write_pgens( pgen_label, gate_prob, gate_f):
+        tmp_pgen_label = []
+        for i in range(len(pgen_label)):
+            tmp_pgen_label.append(str(pgen_label[i]))
+            #pgen_label[i] = str(pgen_label[i])
+
+        gate_f.write(' '.join(tmp_pgen_label) + '\t')
+        gate_f.flush()
+        tmp_gate = []
+        for i in range(len(gate_prob)):
+            tmp_gate.append(str(gate_prob[i]))
+            gate_prob[i] = str(gate_prob[i])
+        gate_f.write(' '.join(tmp_gate) + '\n')
+        gate_f.flush()
+
     with dev_model.graph.as_default():
         while True:
             valid_batch = valid_batcher.next_batch()
@@ -116,7 +132,9 @@ def validation_acc(dev_model,FLAGS):
             if np.isnan(loss):
                 logging.debug("Nan")
 
-
+            '''gate_p = np.array(results['gate_prob'])
+            gate_p = np.argmax(gate_p,axis=-1)
+            gate_p = gate_p.T'''
             for i,instance in enumerate(ids):
                 if i>=valid_batch.real_length:
                     print("eval done with {} isntances".format(len(output_result)))
@@ -139,6 +157,9 @@ def validation_acc(dev_model,FLAGS):
                 list_of_reference.append([refer])
 
                 out_f.write(valid_batch.original_articles[i]+ '\t' + valid_batch.original_abstracts[i]+'\t'+output_now+'\n')
+
+                #gate_f.write(str(valid_batch.enc_lens[i])+'\t')
+                #write_pgens(valid_batch.pgen_label[i], gate_p[i],gate_f)
 
             totalLoss += loss
             numBatches += 1
@@ -246,7 +267,7 @@ def decode_Beam(FLAGS):
     decoder = BeamSearchDecoder(model, batcher, vocab_out)
     decoder.decode()
 
-
+import time
 def decode_my(FLAGS):
     vocab_in, vocab_out = data.load_dict_data(FLAGS)
     batcher = Batcher(FLAGS.data_path, vocab_in, vocab_out, FLAGS, data_file=FLAGS.test_name)
@@ -256,7 +277,11 @@ def decode_my(FLAGS):
     FLAGS_decode = config.generate_nametuple(FLAGS_decode)
     model = SummarizationModel(FLAGS_decode, vocab_in, vocab_out, batcher)
     decoder = eval.EvalDecoder(model, batcher, vocab_out)
+
+    time_start = time.time()
     decoder.decode()
+    time_end = time.time()
+    print(time_end-time_start)
 
 
 def main(unused_argv):
@@ -269,7 +294,7 @@ def main(unused_argv):
     if FLAGS.mode == 'train':
         train_with_eval(FLAGS)
 
-    elif FLAGS.mode == 'eval':
+    elif FLAGS.mode == 'decode' and FLAGS.beam_size>1:
         decode_Beam(FLAGS)
     elif FLAGS.mode == 'decode':
         decode_my(FLAGS)

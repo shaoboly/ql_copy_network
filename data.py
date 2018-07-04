@@ -11,6 +11,7 @@ START_DECODING = '[START]' # This has a vocab id, which is used at the start of 
 STOP_DECODING = '[STOP]' # This has a vocab id, which is used at the end of untruncated target sequences
 
 # Note: none of <s>, </s>, [PAD], [UNK], [START], [STOP] should appear in the vocab file.
+predicate_regrex = "(r-mso|mso|dev|r-dev):.*?\.(.)+"
 
 class Vocab(object):
     """Vocabulary class for mapping between words and ids (integers)"""
@@ -86,7 +87,7 @@ class Vocab(object):
         lines = open(sp_dir,encoding="utf-8")
         grammar_id = []
         for line in lines:
-            word = line.strip()
+            word = line.split('\t')[0].strip()
             idx = self.word2id(word)
             grammar_id.append(idx)
         self.grammar_id = grammar_id
@@ -113,10 +114,14 @@ class Vocab(object):
         self.tag2id ={}
         self.id2tag ={}
         for line in in_f:
-            line = line.strip()
+            line = line.strip().split('\t')[0]
             idx = len(self.id2tag)
             self.tag2id[line] = idx
             self.id2tag[idx] = line
+        if 'O' not in self.tag2id:
+            idx = len(self.id2tag)
+            self.tag2id['O'] = idx
+            self.id2tag[idx] = 'O'
         self.pos_len = len(self.tag2id)
         self.pos_pad_id = self.tag2id["O"]
 
@@ -126,10 +131,32 @@ class Vocab(object):
             w = self.id2word(index)
         else:
             return False
-        if re.match("(r-mso|mso):.*?\..*?\.(.)+", w):
+        if re.match(predicate_regrex, w) or re.match("<http://dbpedia.org/.*?>", w):
             return True
         else:
             return False
+
+    def compute_predicate_indices_mask(self,embedding_dict):
+        all_predicate_indexes = []
+        mask = []
+        for i in range(self._count):
+            w = self.id2word(i)
+            if re.match(predicate_regrex,w):
+                w = w.replace("r-mso:","")
+                w = w.replace("mso:", "")
+                subwords = w.split('.')
+                tmp = []
+                for sub in subwords:
+                    tmp.append(embedding_dict.word2id(sub))
+                all_predicate_indexes.append(np.array(tmp))
+                mask.append(len(tmp)+1)
+            else:
+                c = embedding_dict.word2id(w)
+                mask.append(1)
+                tmp = [c,c,c]
+                all_predicate_indexes.append(np.array(tmp))
+
+        return np.array(all_predicate_indexes), np.array(mask,dtype=np.int32)
 
     def compute_predicate_indices(self,embedding_dict):
         all_predicate_indexes = []
@@ -150,10 +177,39 @@ class Vocab(object):
 
         return np.array(all_predicate_indexes)
 
-    def compute_predicate_indices_split(self,embedding_dict,max=3):
+    def compute_predicate_indices_split_mask(self, embedding_dict, max=3):
         all_predicate_indexes = []
+        mask = []
         for i in range(self._count):
             w = self.id2word(i)
+            if re.match(predicate_regrex, w):
+                w = w.replace("r-mso:", "")
+                w = w.replace("mso:", "")
+
+                second_word = w.split('.')[1]
+                subwords = [second_word]+w.split('.')[-1].split('_')
+
+                tmp = []
+                for i, sub in enumerate(subwords):
+                    if i >= max:
+                        break
+                    tmp.append(np.array(embedding_dict.word2id(sub)))
+                mask.append(len(tmp)+1)
+                while len(tmp) < max:
+                    tmp.append(np.zeros_like(tmp[-1]))
+                all_predicate_indexes.append(np.array(tmp))
+            else:
+                c = embedding_dict.word2id(w)
+                tmp = [c for i in range(max)]
+                all_predicate_indexes.append(np.array(tmp))
+                mask.append(1)
+
+        return np.array(all_predicate_indexes),np.array(mask,dtype=np.int32)
+
+    def compute_predicate_indices_split(self,embedding_dict,max=3):
+        all_predicate_indexes = []
+        for j in range(self._count):
+            w = self.id2word(j)
             if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
                 w = w.replace("r-mso:","")
                 w = w.replace("mso:", "")
@@ -172,6 +228,34 @@ class Vocab(object):
                 all_predicate_indexes.append(np.array(tmp))
 
         return np.array(all_predicate_indexes)
+
+    def compute_lcquad_indices_mask(self,embedding_dict, max=3):
+        all_predicate_indexes = []
+        mask = []
+        for i in range(self._count):
+            w = self.id2word(i)
+            if re.match("<http://.*?>", w):
+                w = w.replace('<http://dbpedia.org/', '').replace('>', '')
+                subwords = w.split('/')
+                tmp = []
+                for i,sub in enumerate(subwords):
+                    if i>=max:
+                        break
+                    tmp.append(embedding_dict.word2id(sub))
+                if len(tmp)==0:
+                    print("?")
+                mask.append(len(tmp) + 1)
+                while len(tmp) < max:
+                    tmp.append(1)
+                all_predicate_indexes.append(np.array(tmp))
+
+            else:
+                c = embedding_dict.word2id(w)
+                mask.append(1)
+                tmp = [c for i in range(max)]
+                all_predicate_indexes.append(np.array(tmp))
+
+        return np.array(all_predicate_indexes), np.array(mask,dtype=np.int32)
 
 def load_dict_data(FLAGS):
 

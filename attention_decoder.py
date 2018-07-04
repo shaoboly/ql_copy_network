@@ -401,7 +401,9 @@ def add_matching_score(embed_features,measure, decoder_features, context_vector)
 
     predicate_weights = math_ops.reduce_sum(measure * math_ops.tanh(embed_features +decoder_features + context_vector),axis=-1)  # calculate e
 
-    predicate_weights = tf.reshape(predicate_weights,[BS,n])
+    predicate_weights = tf.squeeze(predicate_weights)
+    #predicate_weights = tf.reshape(predicate_weights,[BS,n])
+    #predicate_weights = tf.nn.softmax(predicate_weights)
     return predicate_weights
 
 

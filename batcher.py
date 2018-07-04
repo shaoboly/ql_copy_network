@@ -186,13 +186,19 @@ class Batch(object):
         grammar_indices = vocab_out.get_special_vocab_indexes(os.path.join(self.hps.data_path, "grammer"))
         for i, target_out in enumerate(self.target_batch):
             for j,item in enumerate(target_out):
+                #if item in grammar_indices or item <4:
                 if item in grammar_indices:
                     self.pgen_label[i][j] = 0
                 else:
-                    if vocab_out.is_predicate(item):
+                    '''if vocab_out.is_predicate(item):
                         self.pgen_label[i][j]= 1
                     else:
-                        self.pgen_label[i][j] = 2
+                        self.pgen_label[i][j] = 2'''
+                    if item>=vocab_out.size():
+                    #if vocab_out.is_predicate(item):
+                        self.pgen_label[i][j]= 2
+                    else:
+                        self.pgen_label[i][j] = 1
 
     def init_decoder_seq(self, example_list, hps):
         """Initializes the following:

@@ -115,7 +115,7 @@ def run_beam_search(sess, model, vocab, batch, top_k):
     steps = 0
     while steps < FLAGS.max_dec_steps and len(results) < FLAGS.beam_size:
         latest_tokens = [h.latest_token for h in hyps] # latest token produced by each hypothesis
-        latest_tokens = [t if t in range(vocab.size()) else vocab.word2id(data.UNKNOWN_TOKEN) for t in latest_tokens] # change any in-article temporary OOV ids to [UNK] id, so that we can lookup word embeddings
+        latest_tokens = [t if t < vocab.size() else vocab.word2id(data.UNKNOWN_TOKEN) for t in latest_tokens] # change any in-article temporary OOV ids to [UNK] id, so that we can lookup word embeddings
         states = [h.state for h in hyps] # list of current decoder states of the hypotheses
         prev_coverage = [h.coverage for h in hyps] # list of coverage vectors (or None)
 

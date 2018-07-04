@@ -1,20 +1,23 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\lcquad\detect_lower_split"
+datadir= r"D:\data\seq2seq\MSPAD5W\trainning_data\data0502"
 
-train_f = open(datadir+r"\lc.entity_detect.train",encoding="utf-8").readlines()
-valid_f = open(datadir+r"\lc.entity_detect.test",encoding="utf-8").readlines()
-test_f = open(datadir+r"\lc.entity_detect.test",encoding="utf-8").readlines()
-
+train_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
+valid_f = open(datadir+r"\dev.txt",encoding="utf-8").readlines()
+test_f = open(datadir+r"\input.txt",encoding="utf-8").readlines()
+#train_f +=valid_f+test_f
 train_out_f = open("train.txt","w",encoding="utf-8")
 valid_out_f = open("validation.txt","w",encoding="utf-8")
 test_out_f = open("input.txt","w",encoding="utf-8")
 
-source_min =10
-target_min = 1
+source_min = 0
+target_min = 0
 vocat_fenge = "\t"
 import re
+
+predicate_regrex = "(r-mso|mso|dev|r-dev):.*?\.(.)+"
+
 def generate_vocab(train_f,word_size):
     counter = collections.Counter()
 
@@ -29,7 +32,7 @@ def generate_vocab(train_f,word_size):
             counter[w] += 1
 
             #if re.match("ns:.*?\..*?\.(.)+", w):
-            if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
+            if re.match(predicate_regrex,w):
                 predict[w] =1
 
     counter = counter.most_common(word_size)
@@ -44,6 +47,41 @@ def generate_vocab(train_f,word_size):
                 vocab.write("{} {}\n".format(w[0], w[1]))
     vocab.close()
 
+def generate_grammar_words(train_f,word_size):
+    counter = collections.Counter()
+    grammar = {}
+    for line in train_f:
+        #line = str(line).strip().lower().split('\t')
+        line = str(line).strip().split('\t')
+        logic = line[1].split()
+
+        for w in logic:
+            if not re.match("<http://.*?>", w):
+                counter[w] = 10
+
+    counter = counter.most_common(word_size)
+
+    vocab = open("grammar", "w", encoding="utf-8")
+    for i, w in enumerate(counter):
+        vocab.write("{}{}{}\n".format(w[0],vocat_fenge, w[1]))
+
+def generate_pos_words(train_f,word_size):
+    counter = collections.Counter()
+    grammar = {}
+    for line in train_f:
+        #line = str(line).strip().lower().split('\t')
+        line = str(line).strip().split('\t')
+        logic = line[2].split()
+
+        for w in logic:
+            counter[w] +=1
+
+    counter = counter.most_common(word_size)
+
+    vocab = open("pos_tag", "w", encoding="utf-8")
+    for i, w in enumerate(counter):
+        vocab.write("{}{}{}\n".format(w[0],vocat_fenge, w[1]))
+
 
 def generate_predicate_vocab(train_f,word_size):
     counter = collections.Counter()
@@ -55,13 +93,9 @@ def generate_predicate_vocab(train_f,word_size):
 
         line = line[0].split()
 
-
-        for w in line:
-            w = w.strip()
-            counter[w] += 1
-
         for w in predicate:
-            if re.match("(r-mso|mso):.*?\..*?\.(.)+", w):
+            #if not re.match("ns:.*?\..*?\.(.)+", w):
+            if re.match(predicate_regrex, w):
                 w =w.split(':')[1]
                 w_all = w.split('.')
                 for tmp in w_all:
@@ -69,7 +103,7 @@ def generate_predicate_vocab(train_f,word_size):
 
     counter = counter.most_common(word_size)
 
-    vocab = open("vocab.in", "w", encoding="utf-8")
+    vocab = open("grammer", "w", encoding="utf-8")
 
     for i, w in enumerate(counter):
         if w[1] >= target_min:
@@ -88,11 +122,15 @@ def generate_target_vocab(train_f,word_size):
 
         for w in line:
             w = w.strip()
-            counter[w] += 1
-
-            #if re.match("(r-mso|mso):.*?\..*?\.(.)+",w):
-            if "http://dbpedia.org" in w:
+            if re.match(predicate_regrex,w):
+            #if "http://dbpedia.org" in w:
                 predict[w] = 1
+                counter[w] = 1
+            else:
+                w = w.strip()
+                counter[w] += 1
+
+
 
     counter = counter.most_common(word_size)
 
@@ -169,15 +207,22 @@ def append_target_subwords():
 
     for line in vocab_out:
         w,cnt = line.strip().split()
-        if re.match("(r-mso|mso):.*?\..*?\.(.)+", w):
-            subwords = w.split('.')[-1].split('_')
+
+        if re.match(predicate_regrex, w):
+            #subwords = w.split('.')[-1].split('_')
+            subwords = [w.split('.')[1]] + w.split('.')[-1].split('_')
             for sub in subwords:
                 word2count[sub]=100
 
+        '''if re.match("<http://.*?>", w):
+            w = w.replace('<http://dbpedia.org/','').replace('>','')
+            subwords = w.split('/')
+            for sub in subwords:
+                word2count[sub] = 100'''
     for key in word2count.keys():
         vocab.write(key+'\t'+str(word2count[key])+'\n')
 
-#append_target_subwords()
+
 
 def generate_training_file(train_f,train_out_f):
     random.shuffle(train_f)
@@ -232,20 +277,23 @@ def reverse_seq2seq_data(name):
         line = line.strip().split('\t')
         reverse_data.write(line[1]+'\t'+line[0]+'\n')
 
-reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\input.txt")
-reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\validation.txt")
-reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\train.txt")
+#reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\input.txt")
+#reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\validation.txt")
+#reverse_seq2seq_data(r"D:\data\seq2seq\MSPaD.Merge\MSPaD\data_dir_lower\all_predict\new_fresh_fix_s\train.txt")
+
+#generate_grammar_words(train_f,50000)
+#append_target_subwords()
+
+#generate_training_file(train_f,train_out_f)
+#generate_training_file(valid_f,valid_out_f)
+#generate_training_file(test_f,test_out_f)
 
 
-'''
-generate_training_file(train_f,train_out_f)
-generate_training_file(valid_f,valid_out_f)
-generate_training_file(test_f,test_out_f)
-
-
-generate_vocab(train_f,50000)
-generate_target_vocab(train_f,10000)
-generate_source_vocab(train_f,10000)
+#generate_vocab(train_f,50000)
+#generate_target_vocab(train_f,50000)
+generate_source_vocab(train_f,50000)
+#append_target_subwords()
+#generate_pos_words(train_f,50000)
 
 
 #generate_predicate_vocab(train_f,10000)
