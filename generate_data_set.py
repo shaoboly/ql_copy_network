@@ -1,18 +1,18 @@
 import collections
 import random
 
-datadir= r"D:\data\seq2seq\MSPAD5W\trainning_data\data0502"
+datadir= r"D:\data\seq2seq\desposition\refresh"
 
 train_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
 valid_f = open(datadir+r"\dev.txt",encoding="utf-8").readlines()
-test_f = open(datadir+r"\input.txt",encoding="utf-8").readlines()
+test_f = open(datadir+r"\train.txt",encoding="utf-8").readlines()
 #train_f +=valid_f+test_f
 train_out_f = open("train.txt","w",encoding="utf-8")
-valid_out_f = open("validation.txt","w",encoding="utf-8")
+valid_out_f = open("dev.txt","w",encoding="utf-8")
 test_out_f = open("input.txt","w",encoding="utf-8")
 
-source_min = 0
-target_min = 0
+source_min = 2
+target_min = 2
 vocat_fenge = "\t"
 import re
 
@@ -110,6 +110,12 @@ def generate_predicate_vocab(train_f,word_size):
             vocab.write("{}{}{}\n".format(w[0],vocat_fenge, w[1]))
     vocab.close()
 
+def filter_rule(w):
+    num = w.count("_")
+    if num > 1:
+        return True
+    return False
+
 
 import re
 def generate_target_vocab(train_f,word_size):
@@ -122,6 +128,10 @@ def generate_target_vocab(train_f,word_size):
 
         for w in line:
             w = w.strip()
+
+            if filter_rule(w):
+                continue
+
             if re.match(predicate_regrex,w):
             #if "http://dbpedia.org" in w:
                 predict[w] = 1
@@ -183,6 +193,8 @@ def generate_source_vocab(train_f,word_size):
 
         for w in line:
             w = w.strip()
+            if filter_rule(w):
+                continue
             counter[w] += 1
 
 
@@ -224,13 +236,23 @@ def append_target_subwords():
 
 
 
+def normalize(line):
+    line = line.replace("’s", " 's")
+    line = line.replace("'s", " 's")
+    line = line.replace('?'," ?")
+    line = line.replace('!', " !")
+    line = ' '.join(line.split())
+    return line
+
 def generate_training_file(train_f,train_out_f):
     random.shuffle(train_f)
 
     for line in train_f:
         #line =  str(line).strip().lower().split("\t")
         line = str(line).strip().split("\t")
-        line[1] = ' '.join(line[1].strip().split())
+        line[0] = normalize(line[0])
+        line[1] = normalize(line[1])
+        #line[1] = ' '.join(line[1].strip().split())
         train_out_f.write("{}\t{}\n".format(line[0],line[1]))
 
 
@@ -290,7 +312,7 @@ def reverse_seq2seq_data(name):
 
 
 #generate_vocab(train_f,50000)
-#generate_target_vocab(train_f,50000)
+generate_target_vocab(train_f,50000)
 generate_source_vocab(train_f,50000)
 #append_target_subwords()
 #generate_pos_words(train_f,50000)
