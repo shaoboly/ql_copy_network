@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="1034397c-2e15-41af-9031-6d6959658360" name="203" url="http://10.177.74.203">
+        <fileTransfer host="10.177.74.203" port="22" rootFolder="/home/yegong/shaobo" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="8410f6e6-ceeb-43f0-b10d-5a520e7f4a32" name="yunP100" url="http://172.16.226.114">
+        <fileTransfer host="172.16.226.114" port="22" privateKey="C:\Users\v-boshao\Documents\GCR\yunge\real_private" rootFolder="/home/yegong/boshao" accessType="SFTP" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="a15dc06d-8327-4fb9-bc53-ed8519082ff6" name="156" url="http://10.177.74.156">
+        <fileTransfer host="10.177.74.156" port="22" rootFolder="/home/yegong" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
